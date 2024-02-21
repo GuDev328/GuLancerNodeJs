@@ -15,7 +15,7 @@ class ProjectsService {
     });
     if (checkInDb) {
       throw new ErrorWithStatus({
-        message: 'Bookmark already exist',
+        message: 'Bookmark đã được thêm',
         status: httpStatus.BAD_REQUEST
       });
     }
@@ -34,7 +34,7 @@ class ProjectsService {
     });
     if (!checkInDb) {
       throw new ErrorWithStatus({
-        message: 'Bookmark is not exist',
+        message: 'Bookmark không tồn tại',
         status: httpStatus.BAD_REQUEST
       });
     }

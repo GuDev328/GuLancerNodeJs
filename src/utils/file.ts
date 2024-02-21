@@ -21,7 +21,7 @@ export const handleUploadImage = async (req: Request) => {
           'error' as any,
           new ErrorWithStatus({
             status: httpStatus.BAD_REQUEST,
-            message: 'Invalid file type'
+            message: 'Kiểu file không hợp lệ'
           }) as any
         );
       }
@@ -37,7 +37,7 @@ export const handleUploadImage = async (req: Request) => {
         reject(
           new ErrorWithStatus({
             status: httpStatus.BAD_REQUEST,
-            message: 'Required file is missing'
+            message: 'File không được để trống'
           }) as any
         );
       }
@@ -61,7 +61,7 @@ export const handleUploadVideo = async (req: Request) => {
           'error' as any,
           new ErrorWithStatus({
             status: httpStatus.BAD_REQUEST,
-            message: 'Invalid file type'
+            message: 'Kiểu file không hợp lệ'
           }) as any
         );
       }
@@ -77,7 +77,7 @@ export const handleUploadVideo = async (req: Request) => {
         reject(
           new ErrorWithStatus({
             status: httpStatus.BAD_REQUEST,
-            message: 'Required file is missing'
+            message: 'File không được để trống'
           }) as any
         );
       }
@@ -103,7 +103,7 @@ export const handleUploadVideoHLS = async (req: Request) => {
           'error' as any,
           new ErrorWithStatus({
             status: httpStatus.BAD_REQUEST,
-            message: 'Invalid file type'
+            message: 'Kiểu file không hợp lệ'
           }) as any
         );
       }
@@ -119,7 +119,7 @@ export const handleUploadVideoHLS = async (req: Request) => {
         reject(
           new ErrorWithStatus({
             status: httpStatus.BAD_REQUEST,
-            message: 'Required file is missing'
+            message: 'File không được để trống'
           }) as any
         );
       }

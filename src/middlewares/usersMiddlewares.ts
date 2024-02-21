@@ -17,7 +17,7 @@ export const accessTokenValidator = validate(
     {
       authorization: {
         notEmpty: {
-          errorMessage: 'authorization is required'
+          errorMessage: 'Yêu cầu authorization '
         },
         custom: {
           options: async (value: string, { req }) => {
@@ -37,7 +37,7 @@ export const refreshTokenValidator = validate(
     {
       refreshToken: {
         notEmpty: {
-          errorMessage: 'refreshToken is required'
+          errorMessage: 'Yêu cầu refreshToken'
         },
         custom: {
           options: async (value: string, { req }) => {
@@ -49,14 +49,14 @@ export const refreshTokenValidator = validate(
               ]);
               if (!checkInDB) {
                 throw new ErrorWithStatus({
-                  message: 'Refresh token is not exist',
-                  status: httpStatus.UNAUTHORIZED
+                  message: 'Refresh token không tồn tại',
+                  status: httpStatus.NOT_FOUND
                 });
               }
               req.body.decodeRefreshToken = decodeRefreshToken;
               if (decodeRefreshToken.payload.type !== TokenType.RefreshToken) {
                 throw new ErrorWithStatus({
-                  message: 'Type of token is not valid',
+                  message: 'Kiểu của token không hợp lệ',
                   status: 401
                 });
               }
@@ -80,17 +80,17 @@ export const loginValidator = validate(
     {
       email: {
         isEmail: {
-          errorMessage: 'This is not a valid email'
+          errorMessage: 'Không đúng định dạng email'
         },
         trim: true,
         notEmpty: {
-          errorMessage: 'Missing required email'
+          errorMessage: 'Email không được để trống'
         }
       },
       password: {
         trim: true,
         notEmpty: {
-          errorMessage: 'Missing required password'
+          errorMessage: 'Mật khẩu không được để trống'
         }
       }
     },
@@ -104,27 +104,27 @@ export const registerValidator = validate(
       name: {
         isLength: {
           options: { min: 1, max: 100 },
-          errorMessage: 'Length of name must be between 1 and 100'
+          errorMessage: 'Độ dài của tên từ 1 đến 100 ký tự'
         },
         isString: true,
         notEmpty: {
-          errorMessage: 'Missing required name'
+          errorMessage: 'Tên không được để trống'
         },
         trim: true
       },
       email: {
         notEmpty: {
-          errorMessage: 'Missing required email'
+          errorMessage: 'Email không được để trống'
         },
         isEmail: {
-          errorMessage: 'This is not a valid email'
+          errorMessage: 'Email không đúng định dạng'
         },
         trim: true,
         custom: {
           options: async (value: string) => {
             const result = await usersService.checkEmailExists(value);
             if (result) {
-              throw new Error('Email already exists');
+              throw new Error('Email đã tồn tại');
             }
             return true;
           }
@@ -132,42 +132,42 @@ export const registerValidator = validate(
       },
       username: {
         notEmpty: {
-          errorMessage: 'Missing required username'
+          errorMessage: 'Username không được để trống'
         },
         trim: true,
         custom: {
           options: async (value: string) => {
             const result = await usersService.checkUsernameExists(value);
             if (result) {
-              throw new Error('Username already exists');
+              throw new Error('Username đã tồn tại');
             }
             return true;
           }
         }
       },
       phone_number: {
-        notEmpty: { errorMessage: 'Missing required Phone number' },
+        notEmpty: { errorMessage: 'Số điện thoại không được để trống' },
         custom: {
           options: async (value: string) => {
             if (value.length !== 10 && value[0] !== '0') {
-              throw new Error('Phone number is not valid');
+              throw new Error('Số điện thoại không đúng định dạng');
             }
             return true;
           }
         }
       },
       location: {
-        isString: { errorMessage: 'Location must be string' },
-        notEmpty: { errorMessage: 'Location must be not empty' }
+        isString: { errorMessage: 'Địa chỉ không đúng định dạng' },
+        notEmpty: { errorMessage: 'Địa chỉ không được để trống' }
       },
       date_of_birth: {
         isISO8601: { options: { strict: true, strictSeparator: true } }
       },
       role: {
-        notEmpty: { errorMessage: 'Role must be not empty' },
+        notEmpty: { errorMessage: 'Role không được để trống' },
         isIn: {
           options: [[0, 1]],
-          errorMessage: 'Role must be Employer or Freelancer'
+          errorMessage: 'Role không hợp lệ'
         }
       }
     },
@@ -178,16 +178,16 @@ export const registerValidator = validate(
 export const forgotPasswordValidator = validate(
   checkSchema({
     email: {
-      isEmail: { errorMessage: 'Must be a valid email' },
+      isEmail: { errorMessage: 'Email không đúng định dạng' },
       trim: true,
-      notEmpty: { errorMessage: 'Missing required email' },
+      notEmpty: { errorMessage: 'Email không được để trống' },
       custom: {
         options: async (value, { req }) => {
           const user = await usersService.checkEmailExists(value);
           if (!user) {
             throw new ErrorWithStatus({
               status: httpStatus.NOT_FOUND,
-              message: 'User not found'
+              message: 'Không tìm thấy email này'
             });
           }
           req.body.user = user;
@@ -203,7 +203,7 @@ export const verifyForgotPasswordValidator = validate(
     {
       forgot_password_token: {
         notEmpty: {
-          errorMessage: 'forgot_password_token is required'
+          errorMessage: 'forgot_password_token không được để trống'
         },
         custom: {
           options: async (value: string, { req }) => {
@@ -211,7 +211,7 @@ export const verifyForgotPasswordValidator = validate(
             const decodeForgotPasswordToken = await verifyToken(forgot_password_token);
             if (decodeForgotPasswordToken.payload.type !== TokenType.FogotPasswordToken) {
               throw new ErrorWithStatus({
-                message: 'Type of token is not valid',
+                message: 'Kiểu của token không hợp lệ',
                 status: 401
               });
             }
@@ -220,13 +220,13 @@ export const verifyForgotPasswordValidator = validate(
             if (!user) {
               throw new ErrorWithStatus({
                 status: httpStatus.UNAUTHORIZED,
-                message: 'User not found'
+                message: 'Không tìm thấy user này'
               });
             }
             if (value !== user.forgot_password_token) {
               throw new ErrorWithStatus({
                 status: httpStatus.UNAUTHORIZED,
-                message: 'forgot_password_token do not match'
+                message: 'forgot_password_token không khớp nhau'
               });
             }
             req.body.user = user;
@@ -243,27 +243,23 @@ export const resetPasswordValidator = validate(
   checkSchema({
     password: {
       notEmpty: {
-        errorMessage: 'Missing required password'
+        errorMessage: 'Mật khẩu không được để trống'
       },
       trim: true,
       isLength: {
         options: { min: 6, max: 50 },
-        errorMessage: 'Length of password must be from 6 to 50'
+        errorMessage: 'Độ dài của mật khẩu từ 6 đến 50 ký tự'
       }
     },
     confirmPassword: {
       notEmpty: {
-        errorMessage: 'Missing required confirm password'
+        errorMessage: 'Mật khẩu xác nhận không được để trống'
       },
       trim: true,
-      isLength: {
-        options: { min: 6, max: 50 },
-        errorMessage: 'Length of confirm password must be from 6 to 50'
-      },
       custom: {
         options: (value, { req }) => {
           if (value !== req.body.password) {
-            throw new Error('Passwords do not match');
+            throw new Error('Mật khẩu xác nhận không khớp với mật khẩu');
           }
           return true;
         }
@@ -278,11 +274,11 @@ export const updateMeValidator = validate(
       optional: true,
       isLength: {
         options: { min: 1, max: 100 },
-        errorMessage: 'Length of name must be between 1 and 100'
+        errorMessage: 'Độ dài của tên từ 1 đến 100 ký tự'
       },
       isString: true,
       notEmpty: {
-        errorMessage: 'Missing required name'
+        errorMessage: 'Tên không được để trống'
       },
       trim: true
     },
@@ -292,32 +288,32 @@ export const updateMeValidator = validate(
     },
     bio: {
       optional: true,
-      isString: { errorMessage: 'Bio must be a string' },
+      isString: { errorMessage: 'Tiểu sử không đúng định dạng' },
       isLength: {
         options: { min: 1, max: 200 },
-        errorMessage: 'Length of bio must be between 1 and 200'
+        errorMessage: 'Độ dài của tiểu sử từ 1 đến 200 ký tự'
       }
     },
     location: {
       optional: true,
-      isString: { errorMessage: 'Location must be a string' }
+      isString: { errorMessage: 'Địa chỉ không đúng định dạng' }
     },
     website: {
       optional: true,
-      isURL: { errorMessage: 'Website must be a URL' }
+      isURL: { errorMessage: 'Website không đúng định dạng' }
     },
     username: {
       optional: true,
-      isString: { errorMessage: 'Username must be a string' },
+      isString: { errorMessage: 'Username không đúng định dạng' },
       isLength: {
         options: { min: 1, max: 25 },
-        errorMessage: 'Length of username must be between 1 and 200'
+        errorMessage: 'Độ dài của username từ 1 đến 25 ký tự'
       },
       custom: {
         options: async (value: string) => {
           const result = await usersService.checkUsernameExists(value);
           if (result) {
-            throw new Error('Username already exists');
+            throw new Error('Username đã tồn tại');
           }
           return true;
         }
@@ -325,12 +321,12 @@ export const updateMeValidator = validate(
     },
     avatar: {
       optional: true,
-      isURL: { errorMessage: 'Avatar must be a URL' },
+      isURL: { errorMessage: 'Avatar phải là 1 URL' },
       trim: true
     },
     cover_photo: {
       optional: true,
-      isURL: { errorMessage: 'Cover photo must be a URL' },
+      isURL: { errorMessage: 'Ảnh bìa phải là 1 URL' },
       trim: true
     }
   })
@@ -339,13 +335,13 @@ export const updateMeValidator = validate(
 export const getProfileValidator = validate(
   checkSchema({
     username: {
-      isString: { errorMessage: 'Username must be a string' },
+      isString: { errorMessage: 'Username phải là một chuỗi' },
       custom: {
         options: async (value: string, { req }) => {
           const result = await usersService.checkUsernameExists(value);
           if (!result) {
             throw new ErrorWithStatus({
-              message: 'User not found',
+              message: 'Không tìm thấy username này',
               status: httpStatus.NOT_FOUND
             });
           }
@@ -360,14 +356,14 @@ export const getProfileValidator = validate(
 export const followValidator = validate(
   checkSchema({
     userId: {
-      notEmpty: { errorMessage: 'userId must not be empty' },
+      notEmpty: { errorMessage: 'Mã người dùng không được để trống' },
       custom: {
         options: async (value, { req }) => {
           const user = await usersService.checkUserIdExists(value);
           if (!user) {
             throw new ErrorWithStatus({
               status: httpStatus.NOT_FOUND,
-              message: 'User not found'
+              message: 'Không tìm thấy user này'
             });
           }
           return true;
@@ -380,14 +376,14 @@ export const followValidator = validate(
 export const unfollowValidator = validate(
   checkSchema({
     userId: {
-      notEmpty: { errorMessage: 'userId must not be empty' },
+      notEmpty: { errorMessage: 'Mã người nhận không được để trống' },
       custom: {
         options: async (value, { req }) => {
           const user = await usersService.checkUserIdExists(value);
           if (!user) {
             throw new ErrorWithStatus({
               status: httpStatus.NOT_FOUND,
-              message: 'User not found'
+              message: 'Không tìm thấy user này'
             });
           }
           return true;
@@ -401,33 +397,29 @@ export const changePasswordValidator = validate(
   checkSchema({
     oldPassword: {
       notEmpty: {
-        errorMessage: 'Missing required password'
+        errorMessage: 'Mật khẩu cũ không được để trống'
       },
       trim: true
     },
     newPassword: {
       notEmpty: {
-        errorMessage: 'Missing required new password'
+        errorMessage: 'Mật khẩu mới không được để trống'
       },
       trim: true,
       isLength: {
         options: { min: 6, max: 50 },
-        errorMessage: 'Length of password must be from 6 to 50'
+        errorMessage: 'Độ dài của mật khẩu từ 6 đến 50 ký tự'
       }
     },
     confirmPassword: {
       notEmpty: {
-        errorMessage: 'Missing required confirm password'
+        errorMessage: 'Mật khẩu xác nhận không được để trống'
       },
       trim: true,
-      isLength: {
-        options: { min: 6, max: 50 },
-        errorMessage: 'Length of confirm password must be from 6 to 50'
-      },
       custom: {
         options: (value, { req }) => {
           if (value !== req.body.newPassword) {
-            throw new Error('Passwords do not match');
+            throw new Error('Mật khẩu xác nhận không khớp với mật khẩu');
           }
           return true;
         }
@@ -449,18 +441,18 @@ export const getConversationsValidator = validate(
   checkSchema({
     receiverUserId: {
       notEmpty: {
-        errorMessage: 'receiverUserId must not be empty'
+        errorMessage: 'receiverUserId không được để trống'
       },
       custom: {
         options: async (value, { req }) => {
           if (!ObjectId.isValid(value)) {
-            throw new Error('receiverUserId is not valid');
+            throw new Error('Mã người nhận không đúng định dạng');
           }
           const user = await usersService.checkUserIdExists(value);
           if (!user) {
             throw new ErrorWithStatus({
               status: httpStatus.NOT_FOUND,
-              message: 'User not found'
+              message: 'Không tìm thấy user này'
             });
           }
           return true;
@@ -468,24 +460,24 @@ export const getConversationsValidator = validate(
       }
     },
     limit: {
-      isNumeric: { errorMessage: 'Limit is a number' },
+      isNumeric: { errorMessage: 'Limit phải là một số nguyên' },
       custom: {
         options: (value: number) => {
           const num = Number(value);
           if (num > 50 || num < 1) {
-            throw new Error('Limit must be between 1 and 50');
+            throw new Error('Limit không được lớn hơn 50 và nhỏ hơn 1');
           }
           return true;
         }
       }
     },
     page: {
-      isNumeric: { errorMessage: 'Page must is a number' },
+      isNumeric: { errorMessage: 'Page phải là một số nguyên' },
       custom: {
         options: (value: number) => {
           const num = Number(value);
           if (num < 1) {
-            throw new Error('Page cannot be less than 1');
+            throw new Error('Page không được nhỏ hơn 1');
           }
           return true;
         }

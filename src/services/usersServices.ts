@@ -75,7 +75,7 @@ class UsersService {
     if (!user) {
       throw new ErrorWithStatus({
         status: 401,
-        message: 'Email not found'
+        message: 'Không tìm thấy tài khoản'
       });
     } else {
       const checkPassword = await bcrypt.compareSync(payload.password, user.password);
@@ -100,7 +100,7 @@ class UsersService {
       } else {
         throw new ErrorWithStatus({
           status: 401,
-          message: 'Password incorrect'
+          message: 'Mật khẩu không chính xác'
         });
       }
     }
@@ -140,7 +140,7 @@ class UsersService {
     const googleUserInfo = await this.getGoogleUserInfo(oauthGoogleToken.access_token, oauthGoogleToken.id_token);
     if (!googleUserInfo.verified_email) {
       throw new ErrorWithStatus({
-        message: 'Email not verified',
+        message: 'Email chưa được xác thực',
         status: httpStatus.BAD_REQUEST
       });
     }
@@ -350,7 +350,7 @@ class UsersService {
     });
     if (result.deletedCount === 0) {
       throw new ErrorWithStatus({
-        message: 'This user is not followed yet',
+        message: 'Chưa theo dõi người dùng này',
         status: httpStatus.NOT_FOUND
       });
     }
@@ -365,14 +365,14 @@ class UsersService {
     const user = await db.users.findOne({ _id: new ObjectId(userId) });
     if (!user) {
       throw new ErrorWithStatus({
-        message: 'User not found',
+        message: 'Không tìm thấy người dùng',
         status: httpStatus.NOT_FOUND
       });
     }
     const checkPassword = await bcrypt.compareSync(oldPassword, user.password);
     if (!checkPassword) {
       throw new ErrorWithStatus({
-        message: 'Password incorrect',
+        message: 'Mật khẩu cũ không chính xác',
         status: httpStatus.UNAUTHORIZED
       });
     } else {

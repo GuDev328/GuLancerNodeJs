@@ -21,7 +21,7 @@ export const createTweetValidator = validate(
   checkSchema({
     group_id: {
       notEmpty: {
-        errorMessage: 'group_id is required'
+        errorMessage: 'Phải truyền mã hội nhóm'
       },
       custom: {
         options: async (value: string, { req }) => {
@@ -29,7 +29,7 @@ export const createTweetValidator = validate(
           if (!group) {
             throw new ErrorWithStatus({
               status: httpStatus.UNPROCESSABLE_ENTITY,
-              message: 'Group is not found'
+              message: 'Không tìm thấy hội nhóm này'
             });
           }
           return true;
@@ -42,7 +42,7 @@ export const createTweetValidator = validate(
           if (!TweetTypes.includes(parseInt(value))) {
             throw new ErrorWithStatus({
               status: httpStatus.UNPROCESSABLE_ENTITY,
-              message: 'Tweet type is not valid'
+              message: 'Kiểu bài đăng không hợp lệ'
             });
           }
           return true;
@@ -50,7 +50,7 @@ export const createTweetValidator = validate(
       }
     },
     content: {
-      isString: { errorMessage: 'Tweet content must be a string' },
+      isString: { errorMessage: 'Nội dung bài đăng phải là một chuỗi' },
       custom: {
         options: async (value: string, { req }) => {
           const type = req.body.type as TweetTypeEnum;
@@ -58,7 +58,7 @@ export const createTweetValidator = validate(
             if (value !== '') {
               throw new ErrorWithStatus({
                 status: httpStatus.UNPROCESSABLE_ENTITY,
-                message: 'Tweet content must be empty for Retweet'
+                message: 'Nội dung bài chia sẻ phải rỗng'
               });
             }
           } else if (
@@ -69,7 +69,7 @@ export const createTweetValidator = validate(
           ) {
             throw new ErrorWithStatus({
               status: httpStatus.UNPROCESSABLE_ENTITY,
-              message: 'Missing required content'
+              message: 'Yêu cầu nhập nội dung bài đăng'
             });
           }
           return true;
@@ -87,13 +87,13 @@ export const createTweetValidator = validate(
               if (!parentTweet) {
                 throw new ErrorWithStatus({
                   status: httpStatus.NOT_FOUND,
-                  message: 'Parent tweet not found'
+                  message: 'Không tìm thấy bài đăng gốc'
                 });
               }
             } else {
               throw new ErrorWithStatus({
                 status: httpStatus.UNPROCESSABLE_ENTITY,
-                message: 'Missing parent tweet id'
+                message: 'Yêu cầu truyền mã bài đăng gốc'
               });
             }
           } else if (type === TweetTypeEnum.Tweet) {
@@ -101,7 +101,7 @@ export const createTweetValidator = validate(
             if (parent_id) {
               throw new ErrorWithStatus({
                 status: httpStatus.UNPROCESSABLE_ENTITY,
-                message: 'Parent_id must be null for tweet type'
+                message: 'Mã bài đăng gốc không được truyền'
               });
             }
           }
@@ -110,12 +110,12 @@ export const createTweetValidator = validate(
       }
     },
     hashtags: {
-      isArray: { errorMessage: 'Hashtags must be an array' },
+      isArray: { errorMessage: 'Hashtags phải là 1 mảng chuỗi' },
       custom: {
         options: async (value: string[], { req }) => {
           if (!value.every((hashtag) => typeof hashtag === 'string')) {
             throw new ErrorWithStatus({
-              message: 'Hashtags must be an array of strings',
+              message: 'Hashtags phải là 1 mảng chuỗi',
               status: httpStatus.UNPROCESSABLE_ENTITY
             });
           }
@@ -123,12 +123,12 @@ export const createTweetValidator = validate(
       }
     },
     mentions: {
-      isArray: { errorMessage: 'mentions must be an array' },
+      isArray: { errorMessage: 'mentions phải là 1 mảng chuỗi' },
       custom: {
         options: async (value: string[], { req }) => {
           if (!value.every((mention) => ObjectId.isValid(mention))) {
             throw new ErrorWithStatus({
-              message: 'mentions must be an array of string ObjectId',
+              message: 'mentions phải là 1 mảng chuỗi',
               status: httpStatus.UNPROCESSABLE_ENTITY
             });
           }
@@ -136,7 +136,7 @@ export const createTweetValidator = validate(
       }
     },
     medias: {
-      isArray: { errorMessage: 'medias must be an array' },
+      isArray: { errorMessage: 'medias phải là 1 mảng' },
       custom: {
         options: async (value: Media[], { req }) => {
           if (
@@ -145,7 +145,7 @@ export const createTweetValidator = validate(
             })
           ) {
             throw new ErrorWithStatus({
-              message: 'Media must be an array of object with MediaType',
+              message: 'Media phải là 1 mảng đối tượng với MediaType',
               status: httpStatus.UNPROCESSABLE_ENTITY
             });
           }
@@ -158,13 +158,13 @@ export const createTweetValidator = validate(
 export const tweetIdValidator = validate(
   checkSchema({
     id: {
-      isString: { errorMessage: 'tweetId must be a string' },
+      isString: { errorMessage: 'Mã bài đăng không hợp lệ' },
       custom: {
         options: async (value: string, { req }) => {
           if (!ObjectId.isValid(value)) {
             throw new ErrorWithStatus({
               status: httpStatus.UNPROCESSABLE_ENTITY,
-              message: 'tweetId is not valid'
+              message: 'Mã bài đăng không hợp lệ'
             });
           }
           req.body.tweet_id = value;
@@ -178,27 +178,27 @@ export const tweetIdValidator = validate(
 export const getTweetChildrenValidator = validate(
   checkSchema({
     tweet_type: {
-      isIn: { options: [TweetTypeEnum], errorMessage: 'Invalid tweet type' }
+      isIn: { options: [TweetTypeEnum], errorMessage: 'Kiểu bài đăng không hợp lệ' }
     },
     limit: {
-      isNumeric: { errorMessage: 'Limit is a number' },
+      isNumeric: { errorMessage: 'Limit phải là một số' },
       custom: {
         options: (value: number) => {
           const num = Number(value);
           if (num > 50 || num < 1) {
-            throw new Error('Limit must be between 1 and 50');
+            throw new Error('Limit phải là một số lớn hơn 0 và nhỏ hơn 50');
           }
           return true;
         }
       }
     },
     page: {
-      isNumeric: { errorMessage: 'Page must is a number' },
+      isNumeric: { errorMessage: 'Page phải là một số' },
       custom: {
         options: (value: number) => {
           const num = Number(value);
           if (num < 1) {
-            throw new Error('Page cannot be less than 1');
+            throw new Error('Page không được nhỏ hơn 1');
           }
           return true;
         }
@@ -210,7 +210,7 @@ export const getTweetChildrenValidator = validate(
 export const getNewsFeedValidator = validate(
   checkSchema({
     limit: {
-      isNumeric: { errorMessage: 'Limit is a number' },
+      isNumeric: { errorMessage: 'Limit phải là một số' },
       custom: {
         options: (value: number) => {
           const num = Number(value);
@@ -222,12 +222,12 @@ export const getNewsFeedValidator = validate(
       }
     },
     page: {
-      isNumeric: { errorMessage: 'Page must is a number' },
+      isNumeric: { errorMessage: 'Page phải là một số' },
       custom: {
         options: (value: number) => {
           const num = Number(value);
           if (num < 1) {
-            throw new Error('Page cannot be less than 1');
+            throw new Error('Page không được nhỏ hơn 1');
           }
           return true;
         }
@@ -239,20 +239,20 @@ export const getNewsFeedValidator = validate(
 export const likeValidator = validate(
   checkSchema({
     tweet_id: {
-      isString: { errorMessage: 'Tweet id must be a string' },
+      isString: { errorMessage: 'Mã bài đăng không hợp lệ' },
       custom: {
         options: async (value: string, { req }) => {
           if (!ObjectId.isValid(value)) {
             throw new ErrorWithStatus({
               status: httpStatus.UNPROCESSABLE_ENTITY,
-              message: 'Tweet id is not valid'
+              message: 'Mã bài đăng không hợp lệ'
             });
           }
           const tweet = await db.tweets.findOne({ _id: new ObjectId(value) });
           if (!tweet) {
             throw new ErrorWithStatus({
               status: httpStatus.NOT_FOUND,
-              message: 'Tweet not found'
+              message: 'Không tìm thấy bài đăng'
             });
           }
           return true;

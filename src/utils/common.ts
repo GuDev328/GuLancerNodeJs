@@ -17,7 +17,7 @@ export const stringArrayToObjectIdArray = (stringArray: string[]) => {
 export const accessTokenValidate = async (accessToken: string, req?: Request) => {
   if (accessToken === '') {
     throw new ErrorWithStatus({
-      message: 'Access token is required',
+      message: 'Yêu cầu authorization',
       status: 401
     });
   } else {
@@ -25,7 +25,7 @@ export const accessTokenValidate = async (accessToken: string, req?: Request) =>
 
     if (decodeAuthorization.payload.type !== TokenType.AccessToken) {
       throw new ErrorWithStatus({
-        message: 'Type of token is not valid',
+        message: 'Kiểu token không hợp lệ',
         status: 401
       });
     }

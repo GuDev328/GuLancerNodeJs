@@ -163,7 +163,7 @@ class TweetsService {
     if (!tweet) {
       throw new ErrorWithStatus({
         status: httpStatus.NOT_FOUND,
-        message: 'Tweet not found'
+        message: 'Không tìm thấy tweet'
       });
     }
     const group_id = tweet.group_id;
@@ -171,14 +171,14 @@ class TweetsService {
     if (!group) {
       throw new ErrorWithStatus({
         status: httpStatus.NOT_FOUND,
-        message: 'Group is not found'
+        message: 'Không tìm thấy nhóm này'
       });
     }
     const isPrivate = group.type === GroupTypes.Private;
     if (isPrivate) {
       if (!payload.decodeAuthorization) {
         throw new ErrorWithStatus({
-          message: 'Login required',
+          message: 'Yêu cầu đăng nhập',
           status: httpStatus.UNAUTHORIZED
         });
       }
@@ -187,7 +187,7 @@ class TweetsService {
       if (!isMember || isMember.status !== MemberStatus.Accepted) {
         throw new ErrorWithStatus({
           status: httpStatus.UNAUTHORIZED,
-          message: 'You are not a member of this group'
+          message: 'Bạn không có quyền truy cập'
         });
       }
     }
@@ -199,7 +199,7 @@ class TweetsService {
     if (!tweet) {
       throw new ErrorWithStatus({
         status: httpStatus.NOT_FOUND,
-        message: 'Tweet not found'
+        message: 'Không tìm thấy bài viết'
       });
     }
     const group_id = tweet.group_id;
@@ -207,14 +207,14 @@ class TweetsService {
     if (!group) {
       throw new ErrorWithStatus({
         status: httpStatus.NOT_FOUND,
-        message: 'Group is not found'
+        message: 'Không tìm thấy nhóm này'
       });
     }
     const isPrivate = group.type === GroupTypes.Private;
     if (isPrivate) {
       if (!payload.decodeAuthorization) {
         throw new ErrorWithStatus({
-          message: 'Login required',
+          message: 'Yêu cầu đăng nhập',
           status: httpStatus.UNAUTHORIZED
         });
       }
@@ -223,7 +223,7 @@ class TweetsService {
       if (!isMember || isMember.status !== MemberStatus.Accepted) {
         throw new ErrorWithStatus({
           status: httpStatus.UNAUTHORIZED,
-          message: 'You are not a member of this group'
+          message: 'Bạn không có quyền truy cập'
         });
       }
     }
@@ -552,7 +552,7 @@ class TweetsService {
     });
     if (!checkInDb) {
       throw new ErrorWithStatus({
-        message: 'Like is not exist',
+        message: 'Chưa like trước đó',
         status: httpStatus.BAD_REQUEST
       });
     }

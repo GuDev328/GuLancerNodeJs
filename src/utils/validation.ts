@@ -23,6 +23,15 @@ export const validate = (validations: RunnableValidationChains<ValidationChain>)
     if (errors.isEmpty()) {
       return next();
     }
-    res.status(422).json({ errors: errors.mapped() });
+    const errorObj = errors.mapped();
+    let errorMessage = '';
+
+    for (const key in errorObj) {
+      if (Object.prototype.hasOwnProperty.call(errorObj, key)) {
+        errorMessage += `${errorObj[key].msg}, `;
+      }
+    }
+    errorMessage = errorMessage.slice(0, -2);
+    res.status(422).json({ message: errorMessage });
   };
 };
