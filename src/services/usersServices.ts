@@ -273,7 +273,7 @@ class UsersService {
         $set: { forgot_password_token, updated_at: '$$NOW' }
       }
     ]);
-    await sendEmail(payload.user.email, forgot_password_token, SendEmail.FogotPassword);
+    //await sendEmail(payload.user.email, forgot_password_token, SendEmail.FogotPassword);
     return;
   }
 

@@ -68,7 +68,7 @@ router.patch(
   catchError(updateMeController)
 );
 
-router.get('/get-profile/:username', getProfileValidator, accessTokenValidator, catchError(getProfileController));
+router.get('/get-profile/:username', getProfileValidator, catchError(getProfileController));
 
 router.post('/follow', accessTokenValidator, followValidator, catchError(followController));
 router.post('/unfollow', accessTokenValidator, unfollowValidator, catchError(unfollowController));
