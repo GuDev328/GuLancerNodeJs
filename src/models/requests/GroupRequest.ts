@@ -8,3 +8,7 @@ export interface CreateGroupRequest {
   description: string;
   cover_photo: string;
 }
+
+export interface DecodeAuthorization {
+  decodeAuthorization: JwtPayload;
+}
