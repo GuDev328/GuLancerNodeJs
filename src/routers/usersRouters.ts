@@ -36,7 +36,7 @@ const router = Router();
 router.post('/login', loginValidator, catchError(loginController));
 router.get('/oauth/google', catchError(loginGoogleController));
 router.post('/register', registerValidator, catchError(registerController));
-router.post('/logout', accessTokenValidator, refreshTokenValidator, catchError(logoutController));
+router.post('/logout', catchError(logoutController));
 router.post('/refresh-token', refreshTokenValidator, catchError(refreshTokenController));
 router.post('/forgot-password', forgotPasswordValidator, catchError(forgotPasswordController));
 router.post(
