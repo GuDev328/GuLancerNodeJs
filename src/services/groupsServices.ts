@@ -50,6 +50,14 @@ class GroupsService {
 
     return groups;
   }
+
+  async getGroupById(group_id: ObjectId, user_id: ObjectId) {
+    const group = await db.groups.findOne({ _id: group_id });
+    if (!group) {
+      throw new ErrorWithStatus({ message: 'Group not found', status: httpStatus.NOT_FOUND });
+    }
+    return group;
+  }
 }
 
 const groupsService = new GroupsService();
