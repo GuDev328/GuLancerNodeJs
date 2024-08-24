@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { DateVi } from '~/utils/date-vi';
 
 interface ConversationType {
   _id?: ObjectId;
@@ -20,6 +21,6 @@ export default class Conversation {
     this.sender_id = conversation.sender_id || new ObjectId();
     this.receiver_id = conversation.receiver_id || new ObjectId();
     this.content = conversation.content || '';
-    this.created_at = conversation.created_at || new Date();
+    this.created_at = conversation.created_at || DateVi();
   }
 }

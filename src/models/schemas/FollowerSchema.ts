@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { DateVi } from '~/utils/date-vi';
 
 interface FollowerType {
   _id?: ObjectId;
@@ -17,6 +18,6 @@ export default class Follower {
     this._id = follower._id || new ObjectId();
     this.user_id = follower.user_id || new ObjectId();
     this.followed_user_id = follower.followed_user_id || new ObjectId();
-    this.created_at = follower.created_at || new Date();
+    this.created_at = follower.created_at || DateVi();
   }
 }

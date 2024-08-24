@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import { TweetTypeEnum } from '~/constants/enum';
 import db from './databaseServices';
 import Tweet from '~/models/schemas/TweetSchema';
+import { DateVi } from '~/utils/date-vi';
 
 class SearchServices {
   constructor() {}
@@ -192,7 +193,7 @@ class SearchServices {
     ]);
 
     const listTweetId = resultTweet.map((item) => item._id);
-    const date = new Date();
+    const date = DateVi();
     await db.tweets.updateMany(
       {
         _id: { $in: listTweetId }

@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { IssuesStatus } from '~/constants/enum';
+import { DateVi } from '~/utils/date-vi';
 
 interface IssueType {
   _id?: ObjectId;
@@ -21,6 +22,6 @@ export default class Issue {
     this.user_id = issue.user_id || new ObjectId();
     this.project_id = issue.project_id || new ObjectId();
     this.status = issue.status || IssuesStatus.Processing;
-    this.created_at = issue.created_at || new Date();
+    this.created_at = issue.created_at || DateVi();
   }
 }

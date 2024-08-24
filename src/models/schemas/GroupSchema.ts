@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { GroupTypes } from '~/constants/enum';
+import { DateVi } from '~/utils/date-vi';
 
 interface GroupType {
   _id?: ObjectId;
@@ -27,8 +28,8 @@ export default class Group {
     this.admin_id = group.admin_id || [];
     this.name = group.name || '';
     this.type = group.type || GroupTypes.Public;
-    this.created_at = group.created_at || new Date();
-    this.updated_at = group.updated_at || new Date();
+    this.created_at = group.created_at || DateVi();
+    this.updated_at = group.updated_at || DateVi();
     this.description = group.description || '';
     this.cover_photo = group.cover_photo || '';
   }

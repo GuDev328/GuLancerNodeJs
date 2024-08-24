@@ -18,7 +18,7 @@ import { accessTokenValidator, isLoginValidator } from '~/middlewares/usersMiddl
 import { catchError } from '~/utils/handler';
 const router = Router();
 
-router.post('/create-tweet', accessTokenValidator, createTweetValidator, catchError(createTweetController));
+router.post('/create', accessTokenValidator, createTweetValidator, catchError(createTweetController));
 
 router.get('/tweet/:id', isLoginValidator(accessTokenValidator), tweetIdValidator, catchError(getTweetController));
 

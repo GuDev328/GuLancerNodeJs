@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { DateVi } from '~/utils/date-vi';
 
 interface DiscussionType {
   _id?: ObjectId;
@@ -20,6 +21,6 @@ export default class Discussion {
     this.user_id = discuss.user_id || new ObjectId();
     this.issue_id = discuss.issue_id || new ObjectId();
     this.content = discuss.content || '';
-    this.created_at = discuss.created_at || new Date();
+    this.created_at = discuss.created_at || DateVi();
   }
 }

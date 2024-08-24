@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { RoleType } from '~/constants/enum';
+import { DateVi } from '~/utils/date-vi';
 
 interface UserType {
   _id?: ObjectId;
@@ -52,11 +53,11 @@ export default class User {
     this._id = user._id || new ObjectId();
     this.name = user.name || '';
     this.email = user.email || '';
-    this.date_of_birth = user.date_of_birth || new Date();
+    this.date_of_birth = user.date_of_birth || DateVi();
     this.phone_number = user.phone_number || '';
     this.password = user.password || '';
-    this.created_at = new Date();
-    this.updated_at = new Date();
+    this.created_at = DateVi();
+    this.updated_at = DateVi();
     this.forgot_password_token = user.forgot_password_token || '';
     this.description_markdown = user.description_markdown || '';
     this.description_html = user.description_html || '';

@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { DateVi } from '~/utils/date-vi';
 
 interface LikeType {
   _id?: ObjectId;
@@ -17,6 +18,6 @@ export default class Like {
     this._id = like._id || new ObjectId();
     this.user_id = like.user_id || new ObjectId();
     this.tweet_id = like.tweet_id || new ObjectId();
-    this.created_at = like.created_at || new Date();
+    this.created_at = like.created_at || DateVi();
   }
 }

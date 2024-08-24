@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { DateVi } from '~/utils/date-vi';
 
 interface EvaluationType {
   _id?: ObjectId;
@@ -25,7 +26,7 @@ export default class Evaluation {
     this.deverloper_id = evaluate.deverloper_id || new ObjectId();
     this.content = evaluate.content || '';
     this.star = evaluate.star || 0;
-    this.created_at = evaluate.created_at || new Date();
-    this.updated_at = evaluate.updated_at || new Date();
+    this.created_at = evaluate.created_at || DateVi();
+    this.updated_at = evaluate.updated_at || DateVi();
   }
 }

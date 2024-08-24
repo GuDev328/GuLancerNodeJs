@@ -7,6 +7,7 @@ import { ErrorWithStatus } from '~/models/Errors';
 import { httpStatus } from '~/constants/httpStatus';
 import Like from '~/models/schemas/LikeSchema';
 import { LikeRequest } from '~/models/requests/LikeRequest';
+import { DateVi } from '~/utils/date-vi';
 
 class TweetsService {
   constructor() {}
@@ -14,7 +15,7 @@ class TweetsService {
   async createNewTweet(payload: TweetRequest) {
     const tweet = new Tweet({
       group_id: new ObjectId(payload.group_id),
-      user_id: payload.decodeAuthorization.payload.userId,
+      user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
       type: payload.type,
       content: payload.content,
       parent_id: payload.parent_id ? new ObjectId(payload.parent_id) : null, //  chỉ null khi tweet gốc
@@ -301,7 +302,7 @@ class TweetsService {
       ])
       .toArray();
     const ids = result.map((tweet) => tweet._id as ObjectId);
-    const dateUpdate = new Date();
+    const dateUpdate = DateVi();
     await db.tweets.updateMany(
       {
         _id: {
@@ -467,7 +468,7 @@ class TweetsService {
         .toArray()
     ]);
     const listTweetId = result.map((item) => item._id);
-    const date = new Date();
+    const date = DateVi();
     await db.tweets.updateMany(
       {
         _id: { $in: listTweetId }

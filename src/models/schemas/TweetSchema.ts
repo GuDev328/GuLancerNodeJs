@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { Media, TweetTypeEnum } from '~/constants/enum';
+import { DateVi } from '~/utils/date-vi';
 
 interface TweetType {
   _id?: ObjectId;
@@ -38,7 +39,7 @@ export default class Tweet {
     this.mentions = tweet.mentions || [];
     this.medias = tweet.medias || [];
     this.views = 0;
-    this.created_at = tweet.created_at || new Date();
-    this.updated_at = tweet.updated_at || new Date();
+    this.created_at = tweet.created_at || DateVi();
+    this.updated_at = tweet.updated_at || DateVi();
   }
 }

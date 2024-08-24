@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { DateVi } from '~/utils/date-vi';
 
 interface TechnologyType {
   _id?: ObjectId;
@@ -14,6 +15,6 @@ export default class Technology {
   constructor(technology: TechnologyType) {
     this._id = technology._id || new ObjectId();
     this.name = technology.name || '';
-    this.created_at = technology.created_at || new Date();
+    this.created_at = technology.created_at || DateVi();
   }
 }

@@ -29,6 +29,7 @@ import { sendEmail } from '~/utils/email';
 import axios from 'axios';
 import { nanoid } from 'nanoid';
 import { env } from '~/constants/config';
+import { DateVi } from '~/utils/date-vi';
 
 class UsersService {
   constructor() {}
@@ -88,7 +89,7 @@ class UsersService {
         const saveRefreshToken = await db.refreshTokens.insertOne(
           new RefreshToken({
             token: refreshToken,
-            created_at: new Date(),
+            created_at: DateVi(),
             user_id: user._id
           })
         );
@@ -155,7 +156,7 @@ class UsersService {
       await db.refreshTokens.insertOne(
         new RefreshToken({
           token: refreshToken,
-          created_at: new Date(),
+          created_at: DateVi(),
           user_id: userInDb._id
         })
       );
@@ -170,7 +171,7 @@ class UsersService {
         name: googleUserInfo.name,
         email: googleUserInfo.email,
         username: usernameRandom,
-        date_of_birth: new Date().toISOString(),
+        date_of_birth: DateVi().toISOString(),
         phone_number: '',
         location: '',
         role: RoleType.Undefined
@@ -203,7 +204,7 @@ class UsersService {
     const saveRefreshToken = await db.refreshTokens.insertOne(
       new RefreshToken({
         token: refreshToken,
-        created_at: new Date(),
+        created_at: DateVi(),
         user_id: result.insertedId
       })
     );
@@ -283,7 +284,11 @@ class UsersService {
     const save = await db.users.updateOne(
       { _id: payload.user._id },
       {
-        $set: { password, forgot_password_token: '', updated_at: new Date() }
+        $set: {
+          password,
+          forgot_password_token: '',
+          updated_at: DateVi()
+        }
       }
     );
     return;
@@ -336,7 +341,7 @@ class UsersService {
       new Follower({
         user_id: userId,
         followed_user_id: followedUserId,
-        created_at: new Date()
+        created_at: DateVi()
       })
     );
   }

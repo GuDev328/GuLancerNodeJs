@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { InvitationType } from '~/constants/enum';
+import { DateVi } from '~/utils/date-vi';
 
 interface ApplyInvitationType {
   _id?: ObjectId;
@@ -30,6 +31,6 @@ export default class ApplyInvitation {
     this.content = apply.content || '';
     this.salary = apply.salary || 0;
     this.time_to_complete = apply.time_to_complete || 0;
-    this.created_at = apply.created_at || new Date();
+    this.created_at = apply.created_at || DateVi();
   }
 }
