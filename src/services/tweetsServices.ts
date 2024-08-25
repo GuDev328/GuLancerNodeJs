@@ -434,6 +434,9 @@ class TweetsService {
             }
           },
           {
+            $sort: { created_at: -1 }
+          },
+          {
             $project: {
               tweet_child: 0,
               user: {

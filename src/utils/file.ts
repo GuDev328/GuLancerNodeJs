@@ -94,7 +94,7 @@ export const handleUploadVideoHLS = async (req: Request) => {
     uploadDir: path.resolve('uploads/videos/' + uniqueName),
     maxFiles: 1,
     keepExtensions: false,
-    maxFileSize: 100 * 1024 * 1024, // 100MB
+    maxFileSize: 1024 * 1024 * 1024, // 1GB
     filename: (name, ext) => `${uniqueName}${ext}`,
     filter: function ({ name, originalFilename, mimetype }) {
       const valid = name === 'video' && Boolean(mimetype?.includes('mp4') || mimetype?.includes('quicktime'));

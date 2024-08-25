@@ -32,14 +32,18 @@ class Queue {
         await fs.rm(filePath);
         this.items.shift();
         const files = getFiles(path.resolve('uploads/videos', idName));
-        files.map((filePath) => {
-          const s3Result = UploadFileToS3(
+        files.map(async (filePath) => {
+          const s3Result = await UploadFileToS3(
             'videos-hls/' + idName + filePath.replace(path.resolve('uploads/videos', idName), '').replace('\\', '/'),
             filePath,
             mime.lookup(filePath) as string
           );
         });
-        await fs.rm(path.resolve('uploads/videos', idName), { recursive: true });
+        try {
+          await fs.rm(path.resolve('uploads/videos', idName), { recursive: true, force: true });
+        } catch (e) {
+          //console.log('Error in removing video directory: ' + e);
+        }
 
         this.encoding = false;
         this.processing();
