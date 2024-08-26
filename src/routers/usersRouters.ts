@@ -5,6 +5,7 @@ import {
   forgotPasswordController,
   getMeController,
   getProfileController,
+  initRoleController,
   loginController,
   loginGoogleController,
   logoutController,
@@ -35,6 +36,7 @@ const router = Router();
 
 router.post('/login', loginValidator, catchError(loginController));
 router.get('/oauth/google', catchError(loginGoogleController));
+router.post('/init-role', accessTokenValidator, catchError(initRoleController));
 router.post('/register', registerValidator, catchError(registerController));
 router.post('/logout', catchError(logoutController));
 router.post('/refresh-token', refreshTokenValidator, catchError(refreshTokenController));

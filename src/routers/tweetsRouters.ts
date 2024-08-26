@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createTweetController,
   getNewsFeedController,
+  getPostsByGroupIdController,
   getTweetChildrenController,
   getTweetController,
   likeController,
@@ -31,6 +32,7 @@ router.get(
 );
 
 router.get('/', getNewsFeedValidator, accessTokenValidator, catchError(getNewsFeedController));
+router.get('/group/:id', getNewsFeedValidator, accessTokenValidator, catchError(getPostsByGroupIdController));
 
 router.post('/like', accessTokenValidator, likeValidator, catchError(likeController));
 router.post('/unlike', accessTokenValidator, likeValidator, catchError(unlikeController));

@@ -9,6 +9,7 @@ import {
   FollowRequest,
   ForgotPasswordRequest,
   GetMeRequest,
+  InitRoleRequest,
   LoginRequest,
   LogoutRequest,
   RefreshTokenRequest,
@@ -41,6 +42,14 @@ export const registerController = async (req: Request<ParamsDictionary, any, Reg
   res.status(200).json({
     result,
     message: 'Register suscess'
+  });
+};
+
+export const initRoleController = async (req: Request<ParamsDictionary, any, InitRoleRequest>, res: Response) => {
+  const result = await userService.initRole(req.body);
+  res.status(200).json({
+    result,
+    message: 'Init Role suscess'
   });
 };
 

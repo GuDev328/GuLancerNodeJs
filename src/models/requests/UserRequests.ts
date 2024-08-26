@@ -6,9 +6,15 @@ export interface RegisterRequest {
   name: string;
   email: string;
   username: string;
+  avatar?: string;
   date_of_birth: string;
   phone_number: string;
   location: string;
+  role: RoleType;
+}
+
+export interface InitRoleRequest {
+  decodeAuthorization: JwtPayload;
   role: RoleType;
 }
 

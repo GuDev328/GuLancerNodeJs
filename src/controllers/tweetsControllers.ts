@@ -65,6 +65,19 @@ export const getNewsFeedController = async (req: Request<ParamsDictionary, any, 
   });
 };
 
+export const getPostsByGroupIdController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const limit = Number(req.query.limit as string);
+  const page = Number(req.query.page as string);
+  const group_id = req.params.id;
+  const { total_page, result } = await tweetsService.getPostsByGroupId(group_id, limit, page);
+  res.status(200).json({
+    result,
+    total_page,
+    page,
+    limit,
+    message: 'Get news feed suscess'
+  });
+};
 export const likeController = async (req: Request<ParamsDictionary, any, LikeRequest>, res: Response) => {
   await tweetsService.like(req.body);
   res.status(200).json({

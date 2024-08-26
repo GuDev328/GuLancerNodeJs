@@ -487,6 +487,164 @@ class TweetsService {
     return { total_page: Math.ceil(count[0]?.total / limit), result };
   }
 
+  async getPostsByGroupId(group_id: string, limit: number, page: number) {
+    const listGroupId = [group_id];
+    const [result, count] = await Promise.all([
+      db.tweets
+        .aggregate<Tweet>([
+          {
+            $match: {
+              group_id: {
+                $in: listGroupId.map((groupId) => new ObjectId(groupId))
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: 'Users',
+              localField: 'user_id',
+              foreignField: '_id',
+              as: 'user'
+            }
+          },
+          {
+            $lookup: {
+              from: 'Groups',
+              localField: 'group_id',
+              foreignField: '_id',
+              as: 'group'
+            }
+          },
+          {
+            $unwind: {
+              path: '$user'
+            }
+          },
+
+          {
+            $lookup: {
+              from: 'Users',
+              localField: 'mentions',
+              foreignField: '_id',
+              as: 'mentions'
+            }
+          },
+          {
+            $addFields: {
+              mentions: {
+                $map: {
+                  input: '$mentions',
+                  as: 'mention',
+                  in: {
+                    _id: '$$mention._id',
+                    name: '$$mention.name',
+                    email: '$$mention.email',
+                    username: '$$mention.username',
+                    avatar: '$$mention.avatar'
+                  }
+                }
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: 'Likes',
+              localField: '_id',
+              foreignField: 'tweet_id',
+              as: 'likes'
+            }
+          },
+          {
+            $lookup: {
+              from: 'Tweets',
+              localField: '_id',
+              foreignField: 'parent_id',
+              as: 'tweet_child'
+            }
+          },
+          {
+            $addFields: {
+              likes: {
+                $size: '$likes'
+              },
+              retweet: {
+                $size: {
+                  $filter: {
+                    input: '$tweet_child',
+                    as: 'item',
+                    cond: {
+                      $eq: ['$$item.type', TweetTypeEnum.Retweet]
+                    }
+                  }
+                }
+              },
+              comment: {
+                $size: {
+                  $filter: {
+                    input: '$tweet_child',
+                    as: 'item',
+                    cond: {
+                      $eq: ['$$item.type', TweetTypeEnum.Comment]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            $sort: { created_at: -1 }
+          },
+          {
+            $project: {
+              tweet_child: 0,
+              user: {
+                password: 0,
+                created_at: 0,
+                forgot_password_token: 0,
+                updated_at: 0
+              }
+            }
+          },
+          {
+            $skip: limit * (page - 1)
+          },
+          {
+            $limit: limit
+          }
+        ])
+        .toArray(),
+      db.tweets
+        .aggregate([
+          {
+            $match: {
+              group_id: {
+                $in: listGroupId.map((groupId) => new ObjectId(groupId))
+              }
+            }
+          },
+          {
+            $count: 'total'
+          }
+        ])
+        .toArray()
+    ]);
+    const listTweetId = result.map((item) => item._id);
+    const date = DateVi();
+    await db.tweets.updateMany(
+      {
+        _id: { $in: listTweetId }
+      },
+      {
+        $inc: { views: 1 },
+        $set: { updated_at: date }
+      }
+    );
+    result.forEach((item) => {
+      (item.views += 1), (item.updated_at = date);
+    });
+    return { total_page: Math.ceil(count[0]?.total / limit), result };
+  }
+
   async like(payload: LikeRequest) {
     const checkInDb = await db.likes.findOne({
       user_id: payload.decodeAuthorization.payload.userId,

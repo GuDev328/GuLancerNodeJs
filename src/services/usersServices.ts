@@ -4,6 +4,7 @@ import {
   FollowRequest,
   ForgotPasswordRequest,
   GetMeRequest,
+  InitRoleRequest,
   LoginRequest,
   LogoutRequest,
   RefreshTokenRequest,
@@ -163,7 +164,7 @@ class UsersService {
       return {
         accessToken,
         refreshToken,
-        newUser: false
+        newUser: userInDb.role === RoleType.Undefined ? true : false
       };
     } else {
       const usernameRandom = googleUserInfo.name.replace(/\s/g, '') + new Date().getTime() + nanoid(5);
@@ -171,6 +172,7 @@ class UsersService {
         name: googleUserInfo.name,
         email: googleUserInfo.email,
         username: usernameRandom,
+        avatar: googleUserInfo.picture,
         date_of_birth: DateVi().toISOString(),
         phone_number: '',
         location: '',
@@ -395,6 +397,29 @@ class UsersService {
       );
       return;
     }
+  }
+
+  async initRole(payload: InitRoleRequest) {
+    const { decodeAuthorization, role } = payload;
+    const userId = decodeAuthorization.payload.userId;
+    const user = await db.users.findOneAndUpdate(
+      {
+        _id: new ObjectId(userId)
+      },
+      {
+        $set: {
+          role: role
+        }
+      },
+      {
+        returnDocument: 'after',
+        projection: {
+          forgot_password_token: 0,
+          password: 0
+        }
+      }
+    );
+    return user;
   }
 }
 
