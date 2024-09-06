@@ -192,7 +192,7 @@ class TweetsService {
           status: httpStatus.UNAUTHORIZED
         });
       }
-      const userGetTweet = payload.decodeAuthorization.payload.userId;
+      const userGetTweet = new ObjectId(payload.decodeAuthorization.payload.userId);
       const isMember = await db.members.findOne({ group_id: group_id, user_id: userGetTweet });
       if (!isMember || isMember.status !== MemberStatus.Accepted) {
         throw new ErrorWithStatus({
@@ -224,6 +224,14 @@ class TweetsService {
             localField: 'mentions',
             foreignField: '_id',
             as: 'mentions'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'user_id',
+            foreignField: '_id',
+            as: 'user'
           }
         },
         {
@@ -294,6 +302,9 @@ class TweetsService {
           }
         },
         {
+          $sort: { created_at: -1 }
+        },
+        {
           $skip: limit * (page - 1)
         },
         {
@@ -336,6 +347,7 @@ class TweetsService {
         .aggregate<Tweet>([
           {
             $match: {
+              type: TweetTypeEnum.Tweet,
               group_id: {
                 $in: listGroupId.map((groupId) => new ObjectId(groupId))
               }

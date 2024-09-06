@@ -6,6 +6,7 @@ import { httpStatus } from '~/constants/httpStatus';
 import db from '~/services/databaseServices';
 import Conversation from '~/models/schemas/ConversationSchema';
 import { ObjectId } from 'mongodb';
+import { DefaultEventsMap } from 'node_modules/socket.io/dist/typed-events';
 
 const initializeSocket = (httpServer: ServerHttp) => {
   const io = new Server(httpServer, {
@@ -81,6 +82,17 @@ const initializeSocket = (httpServer: ServerHttp) => {
     });
     socket.on('disconnect', () => {
       delete users[userId];
+    });
+
+    socket.on('newComment', (room, comment) => {
+      io.to(room).emit('commentUpdated', comment);
+    });
+
+    socket.on('joinRoomComment', (room) => {
+      socket.join(room);
+    });
+    socket.on('leaveRoomComment', (room) => {
+      socket.leave(room);
     });
   });
 };
