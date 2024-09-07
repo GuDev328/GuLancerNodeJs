@@ -8,6 +8,7 @@ import { httpStatus } from '~/constants/httpStatus';
 import Like from '~/models/schemas/LikeSchema';
 import { LikeRequest } from '~/models/requests/LikeRequest';
 import { DateVi } from '~/utils/date-vi';
+import { update } from 'lodash';
 
 class TweetsService {
   constructor() {}
@@ -344,7 +345,7 @@ class TweetsService {
     const listGroupId = listGroup
       .filter((member) => member.status === MemberStatus.Accepted)
       .map((item) => item.group_id);
-    const [result, count] = await Promise.all([
+    const [resultRes, count] = await Promise.all([
       db.tweets
         .aggregate<Tweet>([
           {
@@ -484,7 +485,7 @@ class TweetsService {
         ])
         .toArray()
     ]);
-    const listTweetId = result.map((item) => item._id);
+    const listTweetId = resultRes.map((item) => item._id);
     const date = DateVi();
     await db.tweets.updateMany(
       {
@@ -495,15 +496,24 @@ class TweetsService {
         $set: { updated_at: date }
       }
     );
-    result.forEach((item) => {
-      (item.views += 1), (item.updated_at = date);
-    });
+    const result = await Promise.all(
+      resultRes.map(async (item) => {
+        const like = await db.likes.findOne({ tweet_id: item._id, user_id: new ObjectId(userId) });
+
+        return {
+          ...item,
+          views: item.views + 1,
+          updated_at: date,
+          liked: !!like
+        };
+      })
+    );
     return { total_page: Math.ceil(count[0]?.total / limit), result };
   }
 
-  async getPostsByGroupId(group_id: string, limit: number, page: number) {
+  async getPostsByGroupId(group_id: string, user_id: string, limit: number, page: number) {
     const listGroupId = [group_id];
-    const [result, count] = await Promise.all([
+    const [resultRes, count] = await Promise.all([
       db.tweets
         .aggregate<Tweet>([
           {
@@ -643,7 +653,7 @@ class TweetsService {
         ])
         .toArray()
     ]);
-    const listTweetId = result.map((item) => item._id);
+    const listTweetId = resultRes.map((item) => item._id);
     const date = DateVi();
     await db.tweets.updateMany(
       {
@@ -654,15 +664,25 @@ class TweetsService {
         $set: { updated_at: date }
       }
     );
-    result.forEach((item) => {
-      (item.views += 1), (item.updated_at = date);
-    });
+    const result = await Promise.all(
+      resultRes.map(async (item) => {
+        const like = await db.likes.findOne({ tweet_id: item._id, user_id: new ObjectId(user_id) });
+
+        return {
+          ...item,
+          views: item.views + 1,
+          updated_at: date,
+          liked: !!like
+        };
+      })
+    );
+
     return { total_page: Math.ceil(count[0]?.total / limit), result };
   }
 
   async like(payload: LikeRequest) {
     const checkInDb = await db.likes.findOne({
-      user_id: payload.decodeAuthorization.payload.userId,
+      user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
       tweet_id: new ObjectId(payload.tweet_id)
     });
     if (checkInDb) {
@@ -672,7 +692,7 @@ class TweetsService {
       });
     }
     const like = new Like({
-      user_id: payload.decodeAuthorization.payload.userId,
+      user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
       tweet_id: new ObjectId(payload.tweet_id)
     });
     const createLike = await db.likes.insertOne(like);
@@ -681,7 +701,7 @@ class TweetsService {
 
   async unlike(payload: LikeRequest) {
     const checkInDb = await db.likes.findOne({
-      user_id: payload.decodeAuthorization.payload.userId,
+      user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
       tweet_id: new ObjectId(payload.tweet_id)
     });
     if (!checkInDb) {
@@ -691,7 +711,7 @@ class TweetsService {
       });
     }
     const result = await db.likes.deleteOne({
-      user_id: payload.decodeAuthorization.payload.userId,
+      user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
       tweet_id: new ObjectId(payload.tweet_id)
     });
     return result.deletedCount;

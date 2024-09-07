@@ -69,7 +69,8 @@ export const getPostsByGroupIdController = async (req: Request<ParamsDictionary,
   const limit = Number(req.query.limit as string);
   const page = Number(req.query.page as string);
   const group_id = req.params.id;
-  const { total_page, result } = await tweetsService.getPostsByGroupId(group_id, limit, page);
+  const user_id = req.body.decodeAuthorization.payload.userId;
+  const { total_page, result } = await tweetsService.getPostsByGroupId(group_id, user_id, limit, page);
   res.status(200).json({
     result,
     total_page,
