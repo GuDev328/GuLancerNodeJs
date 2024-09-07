@@ -341,7 +341,9 @@ class TweetsService {
 
   async getNewsFeed(userId: string, limit: number, page: number) {
     const listGroup = await db.members.find({ user_id: new ObjectId(userId) }).toArray();
-    const listGroupId = listGroup.map((item) => item.group_id);
+    const listGroupId = listGroup
+      .filter((member) => member.status === MemberStatus.Accepted)
+      .map((item) => item.group_id);
     const [result, count] = await Promise.all([
       db.tweets
         .aggregate<Tweet>([
@@ -508,7 +510,8 @@ class TweetsService {
             $match: {
               group_id: {
                 $in: listGroupId.map((groupId) => new ObjectId(groupId))
-              }
+              },
+              type: TweetTypeEnum.Tweet
             }
           },
           {

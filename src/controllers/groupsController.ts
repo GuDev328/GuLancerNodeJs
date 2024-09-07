@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ObjectId } from 'mongodb';
-import { CreateGroupRequest, DecodeAuthorization } from '~/models/requests/GroupRequest';
+import { CreateGroupRequest, DecodeAuthorization, GroupID } from '~/models/requests/GroupRequest';
 import groupsService from '~/services/groupsServices';
 
 export const createGroupController = async (req: Request<ParamsDictionary, any, CreateGroupRequest>, res: Response) => {
@@ -33,5 +33,15 @@ export const getGroupByIdController = async (
   res.status(200).json({
     result,
     message: 'Lấy thông tin nhóm thành công'
+  });
+};
+
+export const joinGroupController = async (req: Request<ParamsDictionary, any, GroupID>, res: Response) => {
+  const group_id = new ObjectId(req.body.group_id);
+  const user_id = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const result = await groupsService.joinGroup(group_id, user_id);
+  res.status(200).json({
+    result,
+    message: 'Join nhóm thành công'
   });
 };

@@ -12,3 +12,7 @@ export interface CreateGroupRequest {
 export interface DecodeAuthorization {
   decodeAuthorization: JwtPayload;
 }
+
+export interface GroupID extends DecodeAuthorization {
+  group_id: string;
+}
