@@ -50,30 +50,30 @@ export const createTweetValidator = validate(
       }
     },
     content: {
-      isString: { errorMessage: 'Nội dung bài đăng phải là một chuỗi' },
-      custom: {
-        options: async (value: string, { req }) => {
-          const type = req.body.type as TweetTypeEnum;
-          if (type === TweetTypeEnum.Retweet) {
-            if (value !== '') {
-              throw new ErrorWithStatus({
-                status: httpStatus.UNPROCESSABLE_ENTITY,
-                message: 'Nội dung bài chia sẻ phải rỗng'
-              });
-            }
-          } else if (
-            (type === TweetTypeEnum.Comment || type === TweetTypeEnum.Tweet) &&
-            isEmpty(req.body.mentions) &&
-            value === ''
-          ) {
-            throw new ErrorWithStatus({
-              status: httpStatus.UNPROCESSABLE_ENTITY,
-              message: 'Yêu cầu nhập nội dung bài đăng'
-            });
-          }
-          return true;
-        }
-      }
+      isString: { errorMessage: 'Nội dung bài đăng phải là một chuỗi' }
+      // custom: {
+      //   options: async (value: string, { req }) => {
+      //     const type = req.body.type as TweetTypeEnum;
+      //     if (type === TweetTypeEnum.Retweet) {
+      //       if (value !== '') {
+      //         throw new ErrorWithStatus({
+      //           status: httpStatus.UNPROCESSABLE_ENTITY,
+      //           message: 'Nội dung bài chia sẻ phải rỗng'
+      //         });
+      //       }
+      //     } else if (
+      //       (type === TweetTypeEnum.Comment || type === TweetTypeEnum.Tweet) &&
+      //       isEmpty(req.body.mentions) &&
+      //       value === ''
+      //     ) {
+      //       throw new ErrorWithStatus({
+      //         status: httpStatus.UNPROCESSABLE_ENTITY,
+      //         message: 'Yêu cầu nhập nội dung bài đăng'
+      //       });
+      //     }
+      //     return true;
+      //   }
+      // }
     },
     parent_id: {
       custom: {
