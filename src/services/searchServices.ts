@@ -8,127 +8,54 @@ class SearchServices {
   constructor() {}
   async searchCommunity(userId: string, key: string, limit: number, page: number) {
     const regexPattern = new RegExp(key, 'i');
-    const listGroup = await db.members.find({ user_id: new ObjectId(userId) }).toArray();
-    const listGroupId = listGroup.map((item) => item.group_id);
-    const [resultTweet, countTweet, resultUser, countUser] = await Promise.all([
-      db.tweets
-        .aggregate<Tweet>([
+    const [resultGroup, countGroup, resultUser, countUser] = await Promise.all([
+      db.groups
+        .aggregate([
           {
             $match: {
-              $text: {
-                $search: key
-              }
-            }
-          },
-          {
-            $match: {
-              group_id: {
-                $in: listGroupId.map((groupId) => new ObjectId(groupId))
-              }
+              name: { $regex: regexPattern }
             }
           },
           {
             $lookup: {
-              from: 'Users',
-              localField: 'user_id',
-              foreignField: '_id',
-              as: 'user'
-            }
-          },
-          {
-            $lookup: {
-              from: 'Groups',
-              localField: 'group_id',
-              foreignField: '_id',
-              as: 'group'
-            }
-          },
-          {
-            $unwind: {
-              path: '$user'
-            }
-          },
-          {
-            $lookup: {
-              from: 'Users',
-              localField: 'mentions',
-              foreignField: '_id',
-              as: 'mentions'
+              from: 'Members',
+              localField: '_id',
+              foreignField: 'group_id',
+              as: 'members'
             }
           },
           {
             $addFields: {
-              mentions: {
-                $map: {
-                  input: '$mentions',
-                  as: 'mention',
-                  in: {
-                    _id: '$$mention._id',
-                    name: '$$mention.name',
-                    email: '$$mention.email',
-                    username: '$$mention.username',
-                    avatar: '$$mention.avatar'
-                  }
-                }
-              }
-            }
-          },
-          {
-            $lookup: {
-              from: 'Likes',
-              localField: '_id',
-              foreignField: 'tweet_id',
-              as: 'likes'
-            }
-          },
-          {
-            $lookup: {
-              from: 'Tweets',
-              localField: '_id',
-              foreignField: 'parent_id',
-              as: 'tweet_child'
-            }
-          },
-          {
-            $addFields: {
-              likes: {
-                $size: '$likes'
+              statusMember: {
+                $ifNull: [
+                  // Lọc member có user_id là userId và lấy trường status
+                  {
+                    $arrayElemAt: [
+                      {
+                        $map: {
+                          input: {
+                            $filter: {
+                              input: '$members',
+                              as: 'member',
+                              cond: { $eq: ['$$member.user_id', new ObjectId(userId)] }
+                            }
+                          },
+                          as: 'filteredMember',
+                          in: '$$filteredMember.status'
+                        }
+                      },
+                      0
+                    ]
+                  },
+                  10 // Nếu không có bản ghi phù hợp, mặc định là 10
+                ]
               },
-              retweet: {
-                $size: {
-                  $filter: {
-                    input: '$tweet_child',
-                    as: 'item',
-                    cond: {
-                      $eq: ['$$item.type', TweetTypeEnum.Retweet]
-                    }
-                  }
-                }
-              },
-              comment: {
-                $size: {
-                  $filter: {
-                    input: '$tweet_child',
-                    as: 'item',
-                    cond: {
-                      $eq: ['$$item.type', TweetTypeEnum.Comment]
-                    }
-                  }
-                }
-              }
+              member_count: { $size: '$members' }
             }
           },
           {
             $project: {
-              tweet_child: 0,
-              user: {
-                password: 0,
-                created_at: 0,
-                emailVerifyToken: 0,
-                forgot_password_token: 0,
-                updated_at: 0,
-                twitter_circle: 0
-              }
+              members: 0
             }
           },
           {
@@ -139,36 +66,14 @@ class SearchServices {
           }
         ])
         .toArray(),
-      db.tweets
-        .aggregate([
-          {
-            $match: {
-              $text: {
-                $search: key
-              }
-            }
-          },
-          {
-            $match: {
-              group_id: {
-                $in: listGroupId.map((groupId) => new ObjectId(groupId))
-              }
-            }
-          },
-
-          {
-            $count: 'total'
-          }
-        ])
-        .toArray(),
+      db.groups.countDocuments({
+        name: { $regex: regexPattern }
+      }),
       db.users
         .aggregate([
           {
             $match: {
-              username: {
-                $regex: key,
-                $options: 'i'
-              }
+              $or: [{ username: { $regex: regexPattern } }, { name: { $regex: regexPattern } }]
             }
           },
           {
@@ -189,27 +94,14 @@ class SearchServices {
           }
         ])
         .toArray(),
-      db.users.countDocuments({ username: { $regex: regexPattern } })
+      db.users.countDocuments({
+        $or: [{ username: { $regex: regexPattern } }, { name: { $regex: regexPattern } }]
+      })
     ]);
 
-    const listTweetId = resultTweet.map((item) => item._id);
-    const date = DateVi();
-    await db.tweets.updateMany(
-      {
-        _id: { $in: listTweetId }
-      },
-      {
-        $inc: { views: 1 },
-        $set: { updated_at: date }
-      }
-    );
-    resultTweet.forEach((item) => {
-      (item.views += 1), (item.updated_at = date);
-    });
-
     return {
-      tweets: { total_page: Math.ceil(countTweet[0]?.total / limit), resultTweet },
-      users: { total_page: Math.ceil(countUser / limit), resultUser }
+      groups: { total_page: Math.ceil(countGroup / limit), page, limit, resultGroup },
+      users: { total_page: Math.ceil(countUser / limit), page, limit, resultUser }
     };
   }
 }
