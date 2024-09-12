@@ -1,19 +1,20 @@
 import { ObjectId } from 'mongodb';
 import { GroupTypes, SalaryType, StatusProject } from '~/constants/enum';
 import Technology from './TechnologySchema';
+import Field from './FieldSchema';
 
 interface ProjectType {
   _id?: ObjectId;
   title: string;
   status?: StatusProject;
   admins_id: ObjectId[];
-  max_member: number;
+  max_member?: number;
   members_id?: ObjectId[];
   salary: number;
   salaryType: SalaryType;
-  description_markdown?: string;
-  description_HTML?: string;
-  technology: Technology[];
+  description: string;
+  technologys: Technology[];
+  fields: Field[];
 }
 
 export default class Project {
@@ -25,9 +26,9 @@ export default class Project {
   members_id: ObjectId[];
   salary: number;
   salaryType: SalaryType;
-  description_markdown: string;
-  description_HTML: string;
-  technology: Technology[];
+  description: string;
+  technologys: Technology[];
+  fields: Field[];
 
   constructor(project: ProjectType) {
     this._id = project._id || new ObjectId();
@@ -38,8 +39,8 @@ export default class Project {
     this.members_id = project.members_id || [];
     this.salary = project.salary || 0;
     this.salaryType = project.salaryType || SalaryType.Project;
-    this.description_markdown = project.description_markdown || '';
-    this.description_HTML = project.description_HTML || '';
-    this.technology = project.technology || [];
+    this.description = project.description || '';
+    this.technologys = project.technologys || [];
+    this.fields = project.fields || [];
   }
 }

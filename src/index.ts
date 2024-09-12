@@ -6,6 +6,8 @@ import tweetsRouters from '~/routers/tweetsRouters';
 import projectsRouters from '~/routers/projectsRouters';
 import searchRouters from '~/routers/searchRouters';
 import conversationsRouters from '~/routers/conversationsRouters';
+import fieldRouters from '~/routers/fieldsRouters';
+import technologyRouters from '~/routers/technologyRouters';
 import groupsRouters from '~/routers/groupsRouters';
 import db from './services/databaseServices';
 import { defaultsErrorHandler } from './middlewares/errorsMiddlewares';
@@ -38,6 +40,8 @@ app.use('/projects', projectsRouters);
 app.use('/search', searchRouters);
 app.use('/conversations', conversationsRouters);
 app.use('/groups', groupsRouters);
+app.use('/technology', technologyRouters);
+app.use('/fields', fieldRouters);
 app.use(defaultsErrorHandler);
 
 const port = env.port || 3030;

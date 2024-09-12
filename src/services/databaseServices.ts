@@ -15,6 +15,7 @@ import Issue from '~/models/schemas/IssueSchema';
 import Member from '~/models/schemas/MemberSchema';
 import Project from '~/models/schemas/ProjectSchema';
 import Technology from '~/models/schemas/TechnologySchema';
+import Field from '~/models/schemas/FieldSchema';
 const uri = env.mongodbURI;
 
 class DatabaseServices {
@@ -100,6 +101,9 @@ class DatabaseServices {
   }
   get technologies(): Collection<Technology> {
     return this.db.collection('Technologies');
+  }
+  get fields(): Collection<Field> {
+    return this.db.collection('Fields');
   }
 }
 

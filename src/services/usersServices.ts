@@ -337,8 +337,17 @@ class UsersService {
   }
 
   async follow(payload: FollowRequest) {
-    const userId = payload.decodeAuthorization.payload.userId;
+    const userId = new ObjectId(payload.decodeAuthorization.payload.userId);
     const followedUserId = new ObjectId(payload.userId);
+    const follower = await db.followers.findOne({
+      user_id: userId,
+      followed_user_id: followedUserId
+    });
+    if (follower)
+      throw new ErrorWithStatus({
+        status: httpStatus.BAD_REQUEST,
+        message: 'Bạn đã theo dõi người dùng này'
+      });
     const result = await db.followers.insertOne(
       new Follower({
         user_id: userId,
@@ -349,7 +358,7 @@ class UsersService {
   }
 
   async unfollow(payload: UnfollowRequest) {
-    const userId = payload.decodeAuthorization.payload.userId;
+    const userId = new ObjectId(payload.decodeAuthorization.payload.userId);
     const followedUserId = new ObjectId(payload.userId);
     const result = await db.followers.deleteOne({
       user_id: userId,

@@ -39,6 +39,11 @@ export enum StatusProject {
   Complete
 }
 
+export enum TypeProject {
+  Project,
+  PerHour
+}
+
 export enum IssuesStatus {
   Processing,
   Processed

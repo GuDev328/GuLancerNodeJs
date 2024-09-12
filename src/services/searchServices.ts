@@ -28,7 +28,6 @@ class SearchServices {
             $addFields: {
               statusMember: {
                 $ifNull: [
-                  // Lọc member có user_id là userId và lấy trường status
                   {
                     $arrayElemAt: [
                       {
@@ -77,6 +76,27 @@ class SearchServices {
             }
           },
           {
+            $lookup: {
+              from: 'Followers',
+              let: { userId: '$_id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [{ $eq: ['$user_id', new ObjectId(userId)] }, { $eq: ['$followed_user_id', '$$userId'] }]
+                    }
+                  }
+                }
+              ],
+              as: 'isFollowed'
+            }
+          },
+          {
+            $addFields: {
+              isFollowed: { $cond: { if: { $gt: [{ $size: '$isFollowed' }, 0] }, then: true, else: false } }
+            }
+          },
+          {
             $project: {
               password: 0,
               created_at: 0,
@@ -94,6 +114,7 @@ class SearchServices {
           }
         ])
         .toArray(),
+
       db.users.countDocuments({
         $or: [{ username: { $regex: regexPattern } }, { name: { $regex: regexPattern } }]
       })
