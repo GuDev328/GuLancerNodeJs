@@ -7,40 +7,40 @@ interface ProjectType {
   _id?: ObjectId;
   title: string;
   status?: StatusProject;
-  admins_id: ObjectId[];
+  admin_id: ObjectId;
   max_member?: number;
   members_id?: ObjectId[];
   salary: number;
   salaryType: SalaryType;
   description: string;
-  technologys: Technology[];
-  fields: Field[];
+  technologys: ObjectId[];
+  fields: ObjectId[];
 }
 
 export default class Project {
   _id: ObjectId;
   title: string;
   status: StatusProject;
-  admins_id: ObjectId[];
+  admin_id: ObjectId;
   max_member: number;
   members_id: ObjectId[];
   salary: number;
   salaryType: SalaryType;
   description: string;
-  technologys: Technology[];
-  fields: Field[];
+  technologys: ObjectId[];
+  fields: ObjectId[];
 
   constructor(project: ProjectType) {
     this._id = project._id || new ObjectId();
     this.title = project.title || '';
     this.status = project.status || StatusProject.NotReady;
-    this.admins_id = project.admins_id || [];
+    this.admin_id = project.admin_id;
     this.max_member = project.max_member || 0;
     this.members_id = project.members_id || [];
     this.salary = project.salary || 0;
     this.salaryType = project.salaryType || SalaryType.Project;
     this.description = project.description || '';
-    this.technologys = project.technologys || [];
-    this.fields = project.fields || [];
+    this.technologys = project.technologys;
+    this.fields = project.fields;
   }
 }
