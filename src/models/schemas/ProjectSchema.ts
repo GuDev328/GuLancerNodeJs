@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import { GroupTypes, SalaryType, StatusProject } from '~/constants/enum';
 import Technology from './TechnologySchema';
 import Field from './FieldSchema';
+import { DateVi } from '~/utils/date-vi';
 
 interface ProjectType {
   _id?: ObjectId;
@@ -15,6 +16,7 @@ interface ProjectType {
   description: string;
   technologys: ObjectId[];
   fields: ObjectId[];
+  created_at?: Date;
 }
 
 export default class Project {
@@ -29,6 +31,7 @@ export default class Project {
   description: string;
   technologys: ObjectId[];
   fields: ObjectId[];
+  created_at: Date;
 
   constructor(project: ProjectType) {
     this._id = project._id || new ObjectId();
@@ -42,5 +45,6 @@ export default class Project {
     this.description = project.description || '';
     this.technologys = project.technologys;
     this.fields = project.fields;
+    this.created_at = project.created_at || DateVi();
   }
 }

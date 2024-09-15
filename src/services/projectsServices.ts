@@ -5,7 +5,7 @@ import Bookmark from '~/models/schemas/BookmarkSchema';
 import { httpStatus } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/models/Errors';
 import Project from '~/models/schemas/ProjectSchema';
-import { StatusProject } from '~/constants/enum';
+import { ProjectOrderBy, StatusProject } from '~/constants/enum';
 import Field from '~/models/schemas/FieldSchema';
 import Technology from '~/models/schemas/TechnologySchema';
 
@@ -42,7 +42,7 @@ class ProjectsService {
       admin_id: user_id,
       max_member: 1,
       members_id: [],
-      salary: payload.salary,
+      salary: Number(payload.salary),
       salaryType: payload.salaryType,
       description: payload.description,
       technologys: techsFinds,
@@ -91,7 +91,6 @@ class ProjectsService {
 
   async getAll(page: number, limit: number, payload: GetAllProjectRequest) {
     const regexKey = payload.key ? new RegExp(payload.key, 'i') : null;
-
     let fieldsId = payload.fields?.map((field) => new ObjectId(field)) || [];
     let techsId = payload.technologys?.map((tech) => new ObjectId(tech)) || [];
 
@@ -103,6 +102,17 @@ class ProjectsService {
       const res = await db.technologies.find({ name: regexKey }).toArray();
       techsId = res.map((tech) => new ObjectId(tech._id));
     }
+
+    const sortField =
+      payload.orderBy === ProjectOrderBy.CreatedAt
+        ? { created_at: -1 }
+        : payload.orderBy === ProjectOrderBy.Salary
+          ? { salary: -1 }
+          : payload.orderBy === ProjectOrderBy.StarEmployer
+            ? { 'user.star': -1 }
+            : payload.orderBy === ProjectOrderBy.ProjectDoneEmployer
+              ? { 'user.project_done': -1 }
+              : { created_at: -1 };
 
     const commonQuery = [
       {
@@ -137,6 +147,9 @@ class ProjectsService {
           foreignField: '_id',
           as: 'fields_info'
         }
+      },
+      {
+        $sort: sortField // Thêm bước sắp xếp dựa trên `payload.orderBy`
       },
       {
         $facet: {
@@ -279,7 +292,6 @@ class ProjectsService {
           : payload.technologys?.length
             ? queryHasTech
             : queryNoTechField;
-
     const result = await db.projects.aggregate(query).toArray();
 
     const response = {

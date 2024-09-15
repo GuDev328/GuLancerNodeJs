@@ -70,3 +70,15 @@ export enum SalaryType {
   Project,
   Hour
 }
+
+export enum ProjectOrderBy {
+  CreatedAt,
+  Salary,
+  StarEmployer,
+  ProjectDoneEmployer
+}
+
+export enum Order {
+  Desc,
+  Asc
+}

@@ -1,5 +1,5 @@
 import { JwtPayload } from 'jsonwebtoken';
-import { Media, SalaryType, TweetTypeEnum, TypeProject } from '~/constants/enum';
+import { Media, ProjectOrderBy, SalaryType, TweetTypeEnum, TypeProject } from '~/constants/enum';
 
 export interface BookmarkRequest {
   decodeAuthorization: JwtPayload;
@@ -23,7 +23,7 @@ export interface GetAllProjectRequest {
   salaryType?: SalaryType;
   salaryFrom?: number;
   salaryTo?: number;
-  orderBy?: string;
+  orderBy?: ProjectOrderBy;
 }
 
 export interface CreateTechRequest {
