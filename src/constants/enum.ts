@@ -31,6 +31,12 @@ export enum RoleType {
   Undefined
 }
 
+export enum RoleMemberProject {
+  Member,
+  Leader,
+  Co_Admin
+}
+
 export enum StatusProject {
   NotReady,
   Recruiting,

@@ -1,5 +1,13 @@
 import { JwtPayload } from 'jsonwebtoken';
-import { Media, ProjectOrderBy, SalaryType, TweetTypeEnum, TypeProject } from '~/constants/enum';
+import {
+  InvitationType,
+  Media,
+  ProjectOrderBy,
+  SalaryType,
+  StatusProject,
+  TweetTypeEnum,
+  TypeProject
+} from '~/constants/enum';
 
 export interface BookmarkRequest {
   decodeAuthorization: JwtPayload;
@@ -29,4 +37,27 @@ export interface GetAllProjectRequest {
 export interface CreateTechRequest {
   decodeAuthorization: JwtPayload;
   name: string;
+}
+
+export interface ApplyInviteRequest {
+  decodeAuthorization: JwtPayload;
+  project_id: string;
+  type: InvitationType;
+  content: string;
+  salary: number;
+  time_to_complete: number; //số ngày dự kiến hoàn thành dự án
+}
+
+export interface GetApplyInviteRequest {
+  project_id: string;
+}
+
+export interface AcceptApplyInviteRequest {
+  decodeAuthorization: JwtPayload;
+  apply_invite_id: string;
+}
+
+export interface GetMyProjectsRequest {
+  decodeAuthorization: JwtPayload;
+  type: StatusProject;
 }

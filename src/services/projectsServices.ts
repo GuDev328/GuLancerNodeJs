@@ -1,13 +1,21 @@
 import db from '~/services/databaseServices';
 import { ObjectId } from 'mongodb';
-import { BookmarkRequest, CreateProjectRequest, GetAllProjectRequest } from '~/models/requests/ProjectRequest';
+import {
+  AcceptApplyInviteRequest,
+  ApplyInviteRequest,
+  BookmarkRequest,
+  CreateProjectRequest,
+  GetAllProjectRequest,
+  GetMyProjectsRequest
+} from '~/models/requests/ProjectRequest';
 import Bookmark from '~/models/schemas/BookmarkSchema';
 import { httpStatus } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/models/Errors';
 import Project from '~/models/schemas/ProjectSchema';
-import { ProjectOrderBy, StatusProject } from '~/constants/enum';
+import { InvitationType, ProjectOrderBy, RoleMemberProject, StatusProject } from '~/constants/enum';
 import Field from '~/models/schemas/FieldSchema';
 import Technology from '~/models/schemas/TechnologySchema';
+import ApplyInvitation from '~/models/schemas/ApplyInvitation';
 
 class ProjectsService {
   constructor() {}
@@ -41,7 +49,7 @@ class ProjectsService {
       status: StatusProject.NotReady,
       admin_id: user_id,
       max_member: 1,
-      members_id: [],
+      members: [],
       salary: Number(payload.salary),
       salaryType: payload.salaryType,
       description: payload.description,
@@ -299,6 +307,114 @@ class ProjectsService {
       total_page: result[0]?.total_page || 0,
       limit: limit,
       data: result[0]?.data || []
+    };
+    return response;
+  }
+
+  async applyInvite(payload: ApplyInviteRequest) {
+    const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
+    const project_id = new ObjectId(payload.project_id);
+    const applyInvite = new ApplyInvitation({
+      user_id,
+      project_id,
+      type: payload.type,
+      content: payload.content,
+      salary: payload.salary,
+      time_to_complete: payload.time_to_complete
+    });
+    return await db.applyInvitations.insertOne(applyInvite);
+  }
+
+  async acceptApplyInvite(payload: AcceptApplyInviteRequest) {
+    const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
+    const apply_invite_id = new ObjectId(payload.apply_invite_id);
+    const applyInvite = await db.applyInvitations.findOne({
+      _id: apply_invite_id,
+      user_id
+    });
+    if (!applyInvite) {
+      throw new ErrorWithStatus({
+        message: 'Invite không tồn tại',
+        status: httpStatus.BAD_REQUEST
+      });
+    }
+    if (applyInvite.type === InvitationType.Apply) {
+      const project = await db.projects.findOne({
+        _id: applyInvite.project_id
+      });
+      if (!project) {
+        throw new ErrorWithStatus({
+          message: 'Project không tồn tại',
+          status: httpStatus.BAD_REQUEST
+        });
+      }
+      if (project.admin_id !== user_id) {
+        throw new ErrorWithStatus({
+          message: 'Bạn không có quyền chấp nhận ứng tuyển này',
+          status: httpStatus.BAD_REQUEST
+        });
+      }
+    } else {
+      if (user_id !== applyInvite.user_id) {
+        throw new ErrorWithStatus({
+          message: 'Bạn không có quyền chấp nhận lời mời này',
+          status: httpStatus.BAD_REQUEST
+        });
+      }
+    }
+
+    await db.projects.updateOne(
+      {
+        _id: applyInvite.project_id
+      },
+      {
+        $push: {
+          members: {
+            _id: user_id,
+            role: RoleMemberProject.Member
+          }
+        }
+      }
+    );
+    await db.applyInvitations.deleteOne({
+      _id: apply_invite_id
+    });
+  }
+
+  async getMyProjects(page: number, limit: number, payload: GetMyProjectsRequest) {
+    const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
+    const [projects, total] = await Promise.all([
+      db.projects.aggregate([
+        {
+          $match: {
+            $and: [{ $or: [{ admin_id: user_id }, { 'members.user_id': user_id }] }, { status: payload.type }]
+          }
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'admin_id',
+            foreignField: '_id',
+            as: 'admin_info'
+          }
+        },
+        {
+          $skip: (page - 1) * limit
+        },
+        {
+          $limit: limit
+        }
+      ]),
+      db.projects.countDocuments({
+        $and: [{ $or: [{ admin_id: user_id }, { 'members.user_id': user_id }] }, { status: payload.type }]
+      })
+    ]);
+    const response = {
+      page: page,
+      limit: limit,
+      total: total,
+      total_page: Math.ceil(total / limit),
+      data: projects
     };
     return response;
   }

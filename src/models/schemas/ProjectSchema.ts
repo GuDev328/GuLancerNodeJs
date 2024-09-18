@@ -1,8 +1,13 @@
 import { ObjectId } from 'mongodb';
-import { GroupTypes, SalaryType, StatusProject } from '~/constants/enum';
+import { GroupTypes, RoleMemberProject, SalaryType, StatusProject } from '~/constants/enum';
 import Technology from './TechnologySchema';
 import Field from './FieldSchema';
 import { DateVi } from '~/utils/date-vi';
+
+interface Member {
+  _id: ObjectId;
+  role: RoleMemberProject;
+}
 
 interface ProjectType {
   _id?: ObjectId;
@@ -10,7 +15,7 @@ interface ProjectType {
   status?: StatusProject;
   admin_id: ObjectId;
   max_member?: number;
-  members_id?: ObjectId[];
+  members?: Member[];
   salary: number;
   salaryType: SalaryType;
   description: string;
@@ -25,7 +30,7 @@ export default class Project {
   status: StatusProject;
   admin_id: ObjectId;
   max_member: number;
-  members_id: ObjectId[];
+  members: Member[];
   salary: number;
   salaryType: SalaryType;
   description: string;
@@ -39,7 +44,7 @@ export default class Project {
     this.status = project.status || StatusProject.NotReady;
     this.admin_id = project.admin_id;
     this.max_member = project.max_member || 0;
-    this.members_id = project.members_id || [];
+    this.members = project.members || [];
     this.salary = project.salary || 0;
     this.salaryType = project.salaryType || SalaryType.Project;
     this.description = project.description || '';
