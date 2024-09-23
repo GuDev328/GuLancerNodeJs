@@ -59,6 +59,47 @@ export const getApplyInviteController = async (
   });
 };
 
+export const getDetailProjectController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const projectId = req.params.id;
+  const result = await db.projects
+    .aggregate([
+      {
+        $match: {
+          _id: new ObjectId(projectId)
+        }
+      },
+      {
+        $lookup: {
+          from: 'Users',
+          localField: 'admin_id',
+          foreignField: '_id',
+          as: 'admin_info'
+        }
+      },
+      {
+        $lookup: {
+          from: 'Technologies',
+          localField: 'technologys',
+          foreignField: '_id',
+          as: 'tech_info'
+        }
+      },
+      {
+        $lookup: {
+          from: 'Fields',
+          localField: 'fields',
+          foreignField: '_id',
+          as: 'field_info'
+        }
+      }
+    ])
+    .toArray();
+  res.status(200).json({
+    result,
+    message: 'Lấy danh sách thành công'
+  });
+};
+
 export const acceptApplyInviteController = async (
   req: Request<ParamsDictionary, any, AcceptApplyInviteRequest>,
   res: Response

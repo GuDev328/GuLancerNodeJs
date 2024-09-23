@@ -384,27 +384,29 @@ class ProjectsService {
   async getMyProjects(page: number, limit: number, payload: GetMyProjectsRequest) {
     const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
     const [projects, total] = await Promise.all([
-      db.projects.aggregate([
-        {
-          $match: {
-            $and: [{ $or: [{ admin_id: user_id }, { 'members.user_id': user_id }] }, { status: payload.type }]
+      db.projects
+        .aggregate([
+          {
+            $match: {
+              $and: [{ $or: [{ admin_id: user_id }, { 'members.user_id': user_id }] }, { status: payload.type }]
+            }
+          },
+          {
+            $lookup: {
+              from: 'Users',
+              localField: 'admin_id',
+              foreignField: '_id',
+              as: 'admin_info'
+            }
+          },
+          {
+            $skip: (page - 1) * limit
+          },
+          {
+            $limit: limit
           }
-        },
-        {
-          $lookup: {
-            from: 'Users',
-            localField: 'admin_id',
-            foreignField: '_id',
-            as: 'admin_info'
-          }
-        },
-        {
-          $skip: (page - 1) * limit
-        },
-        {
-          $limit: limit
-        }
-      ]),
+        ])
+        .toArray(),
       db.projects.countDocuments({
         $and: [{ $or: [{ admin_id: user_id }, { 'members.user_id': user_id }] }, { status: payload.type }]
       })

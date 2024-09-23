@@ -6,22 +6,33 @@ import {
   createProjectController,
   getAllProjectsController,
   getApplyInviteController,
+  getDetailProjectController,
   getMyProjectsController,
   unbookmarkController
 } from '~/controllers/projectsControllers';
-import { bookmarkValidator, isAdminProjectValidator } from '~/middlewares/projectsMiddlewares';
+import {
+  bookmarkValidator,
+  isAdminProjectValidator,
+  isMemberOrAdminProjectValidator
+} from '~/middlewares/projectsMiddlewares';
 import { accessTokenValidator } from '~/middlewares/usersMiddlewares';
 import { catchError } from '~/utils/handler';
 const router = Router();
 
 router.post('/create', accessTokenValidator, catchError(createProjectController));
 router.post('/get-all', accessTokenValidator, catchError(getAllProjectsController));
+router.get(
+  '/get-detail-project/:id',
+  accessTokenValidator,
+  isMemberOrAdminProjectValidator,
+  catchError(getDetailProjectController)
+);
 router.post('/apply-invite', accessTokenValidator, catchError(applyInviteController));
 router.post('/get-apply-invite', accessTokenValidator, isAdminProjectValidator, catchError(getApplyInviteController));
 router.post('/accept-apply-invite', accessTokenValidator, catchError(acceptApplyInviteController));
 router.post('/bookmark', accessTokenValidator, bookmarkValidator, catchError(bookmarkController));
 router.post('/unbookmark', accessTokenValidator, bookmarkValidator, catchError(unbookmarkController));
 
-router.get('/get-my-projects', accessTokenValidator, catchError(getMyProjectsController));
+router.post('/get-my-projects', accessTokenValidator, catchError(getMyProjectsController));
 
 export default router;
