@@ -60,6 +60,7 @@ const initializeSocket = (httpServer: ServerHttp) => {
 
     socket.on('chat', async (data) => {
       const contentChat = data.content;
+      const medias = data.medias || [];
       const receiverUserId = data.receiver_id;
       const fromUserId = data.sender_id;
       const receiverSocketId = users[receiverUserId]?.socketId;
@@ -68,7 +69,8 @@ const initializeSocket = (httpServer: ServerHttp) => {
         new Conversation({
           sender_id: new ObjectId(fromUserId),
           receiver_id: new ObjectId(receiverUserId),
-          content: contentChat
+          content: contentChat,
+          medias: medias
         })
       );
 
@@ -76,7 +78,8 @@ const initializeSocket = (httpServer: ServerHttp) => {
         socket.to(receiverSocketId).emit('receiver-chat', {
           sender_id: fromUserId,
           receiver_id: receiverSocketId,
-          content: contentChat
+          content: contentChat,
+          medias: medias
         });
       }
     });

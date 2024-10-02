@@ -24,6 +24,7 @@ interface UserType {
   techology?: ObjectId[];
   project_done?: number;
   star?: number;
+  verified?: boolean;
 }
 
 export default class User {
@@ -48,6 +49,7 @@ export default class User {
   techology: ObjectId[];
   project_done: number;
   star: number;
+  verified: boolean;
 
   constructor(user: UserType) {
     this._id = user._id || new ObjectId();
@@ -71,5 +73,6 @@ export default class User {
     this.techology = user.techology || [];
     this.project_done = 0;
     this.star = 0;
+    this.verified = user.verified || false;
   }
 }

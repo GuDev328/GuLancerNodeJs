@@ -1,5 +1,7 @@
 import db from '~/services/databaseServices';
 import { ObjectId } from 'mongodb';
+import { DateVi } from '~/utils/date-vi';
+import { ErrorWithStatus } from '~/models/Errors';
 
 class ConversationsService {
   constructor() {}
@@ -39,6 +41,69 @@ class ConversationsService {
       page,
       total_page: Math.ceil(total / limit)
     };
+  }
+
+  async getChatUsers(userId: string, limit: number, page: number) {
+    const result = await db.userConversations
+      .aggregate([
+        {
+          $match: {
+            user_id: new ObjectId(userId)
+          }
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'chat_with',
+            foreignField: '_id',
+            as: 'user'
+          }
+        },
+        {
+          $unwind: '$user'
+        },
+        {
+          $skip: (page - 1) * limit
+        },
+        {
+          $limit: limit
+        }
+      ])
+      .toArray();
+    const total = await db.userConversations.countDocuments({
+      user_id: new ObjectId(userId)
+    });
+    return {
+      result,
+      page,
+      total_page: Math.ceil(total / limit)
+    };
+  }
+
+  async addNewConversation(senderId: string, receiverId: string) {
+    const checkConversation = await db.userConversations.findOne({
+      user_id: new ObjectId(senderId),
+      chat_with: new ObjectId(receiverId)
+    });
+    if (checkConversation) {
+      throw new ErrorWithStatus({
+        message: 'Conversation already exists',
+        status: 400
+      });
+    }
+    const newConversation = await db.userConversations.insertOne({
+      user_id: new ObjectId(senderId),
+      chat_with: new ObjectId(receiverId)
+    });
+    return newConversation;
+  }
+
+  async removeConversation(senderId: string, receiverId: string) {
+    const newConversation = await db.userConversations.deleteOne({
+      user_id: new ObjectId(senderId),
+      chat_with: new ObjectId(receiverId)
+    });
+    return newConversation;
   }
 }
 

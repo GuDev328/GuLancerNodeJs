@@ -107,6 +107,51 @@ export const acceptApplyInviteController = async (
   });
 };
 
+export const getMemberController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const projectId = req.params.id;
+  const result = await db.projects
+    .aggregate([
+      {
+        $match: {
+          _id: new ObjectId(projectId)
+        }
+      },
+      {
+        $lookup: {
+          from: 'Users',
+          localField: 'members._id',
+          foreignField: '_id',
+          as: 'member_info'
+        }
+      },
+      {
+        $project: {
+          members: 1,
+          member_info: {
+            $map: {
+              input: '$member_info',
+              as: 'member',
+              in: {
+                _id: '$$member._id',
+                name: '$$member.name',
+                avatar: '$$member.avatar',
+                star: '$$member.star',
+                project_done: '$$member.project_done',
+                verified: '$$member.verified',
+                role: '$members.role'
+              }
+            }
+          }
+        }
+      }
+    ])
+    .toArray();
+  res.status(200).json({
+    result: result[0].member_info,
+    message: 'Lấy danh sách thành công'
+  });
+};
+
 export const rejectApplyInviteController = async (
   req: Request<ParamsDictionary, any, AcceptApplyInviteRequest>,
   res: Response

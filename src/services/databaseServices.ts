@@ -16,6 +16,7 @@ import Member from '~/models/schemas/MemberSchema';
 import Project from '~/models/schemas/ProjectSchema';
 import Technology from '~/models/schemas/TechnologySchema';
 import Field from '~/models/schemas/FieldSchema';
+import UserConversation from '~/models/schemas/UserConversation';
 const uri = env.mongodbURI;
 
 class DatabaseServices {
@@ -104,6 +105,9 @@ class DatabaseServices {
   }
   get fields(): Collection<Field> {
     return this.db.collection('Fields');
+  }
+  get userConversations(): Collection<UserConversation> {
+    return this.db.collection('UserConversations');
   }
 }
 
