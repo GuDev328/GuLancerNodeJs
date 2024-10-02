@@ -8,6 +8,7 @@ import {
   getApplyInviteController,
   getDetailProjectController,
   getMyProjectsController,
+  rejectApplyInviteController,
   unbookmarkController
 } from '~/controllers/projectsControllers';
 import {
@@ -21,14 +22,10 @@ const router = Router();
 
 router.post('/create', accessTokenValidator, catchError(createProjectController));
 router.post('/get-all', accessTokenValidator, catchError(getAllProjectsController));
-router.get(
-  '/get-detail-project/:id',
-  accessTokenValidator,
-  isMemberOrAdminProjectValidator,
-  catchError(getDetailProjectController)
-);
+router.get('/get-detail-project/:id', accessTokenValidator, catchError(getDetailProjectController));
 router.post('/apply-invite', accessTokenValidator, catchError(applyInviteController));
 router.post('/get-apply-invite', accessTokenValidator, isAdminProjectValidator, catchError(getApplyInviteController));
+router.post('/reject-apply-invite', accessTokenValidator, catchError(rejectApplyInviteController));
 router.post('/accept-apply-invite', accessTokenValidator, catchError(acceptApplyInviteController));
 router.post('/bookmark', accessTokenValidator, bookmarkValidator, catchError(bookmarkController));
 router.post('/unbookmark', accessTokenValidator, bookmarkValidator, catchError(unbookmarkController));

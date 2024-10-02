@@ -6,6 +6,7 @@ import {
   BookmarkRequest,
   CreateProjectRequest,
   GetAllProjectRequest,
+  GetApplyInviteRequest,
   GetMyProjectsRequest
 } from '~/models/requests/ProjectRequest';
 import Bookmark from '~/models/schemas/BookmarkSchema';
@@ -314,13 +315,46 @@ class ProjectsService {
   async applyInvite(payload: ApplyInviteRequest) {
     const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
     const project_id = new ObjectId(payload.project_id);
+
+    const project = await db.projects.findOne({
+      _id: project_id
+    });
+    if (!project) {
+      throw new ErrorWithStatus({
+        message: 'Dự án không tồn tại',
+        code: 'PROJECT_NOT_FOUND',
+        status: httpStatus.BAD_REQUEST
+      });
+    }
+
+    project.members.map((member) => {
+      if (member._id.equals(user_id)) {
+        throw new ErrorWithStatus({
+          message: 'Bạn đã là thành viên của dự án này',
+          code: 'ALREADY_MEMBER',
+          status: httpStatus.BAD_REQUEST
+        });
+      }
+    });
+
+    const findInDb = await db.applyInvitations.findOne({
+      user_id,
+      project_id
+    });
+    if (findInDb) {
+      throw new ErrorWithStatus({
+        message: 'Bạn đã gửi lời mời cho dự án này',
+        code: 'APPLY_INVITE_EXIST',
+        status: httpStatus.BAD_REQUEST
+      });
+    }
     const applyInvite = new ApplyInvitation({
       user_id,
       project_id,
       type: payload.type,
       content: payload.content,
       salary: payload.salary,
-      time_to_complete: payload.time_to_complete
+      time_to_complete: payload.time_to_complete ? new Date(payload.time_to_complete) : null
     });
     return await db.applyInvitations.insertOne(applyInvite);
   }
@@ -328,16 +362,18 @@ class ProjectsService {
   async acceptApplyInvite(payload: AcceptApplyInviteRequest) {
     const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
     const apply_invite_id = new ObjectId(payload.apply_invite_id);
+
     const applyInvite = await db.applyInvitations.findOne({
-      _id: apply_invite_id,
-      user_id
+      _id: apply_invite_id
     });
     if (!applyInvite) {
       throw new ErrorWithStatus({
         message: 'Invite không tồn tại',
+        code: 'APPLY_INVITE_NOT_FOUND',
         status: httpStatus.BAD_REQUEST
       });
     }
+
     if (applyInvite.type === InvitationType.Apply) {
       const project = await db.projects.findOne({
         _id: applyInvite.project_id
@@ -345,12 +381,14 @@ class ProjectsService {
       if (!project) {
         throw new ErrorWithStatus({
           message: 'Project không tồn tại',
+          code: 'PROJECT_NOT_FOUND',
           status: httpStatus.BAD_REQUEST
         });
       }
-      if (project.admin_id !== user_id) {
+      if (!project.admin_id.equals(user_id)) {
         throw new ErrorWithStatus({
           message: 'Bạn không có quyền chấp nhận ứng tuyển này',
+          code: 'NOT_PERMISSION',
           status: httpStatus.BAD_REQUEST
         });
       }
@@ -358,6 +396,7 @@ class ProjectsService {
       if (user_id !== applyInvite.user_id) {
         throw new ErrorWithStatus({
           message: 'Bạn không có quyền chấp nhận lời mời này',
+          code: 'NOT_PERMISSION',
           status: httpStatus.BAD_REQUEST
         });
       }
@@ -370,7 +409,7 @@ class ProjectsService {
       {
         $push: {
           members: {
-            _id: user_id,
+            _id: applyInvite.user_id,
             role: RoleMemberProject.Member
           }
         }
@@ -419,6 +458,73 @@ class ProjectsService {
       data: projects
     };
     return response;
+  }
+
+  async getApplyInvite(payload: GetApplyInviteRequest) {
+    const project_id = new ObjectId(payload.project_id);
+    const page = payload.page || 1;
+    const limit = payload.limit || 10;
+
+    const result = await db.applyInvitations
+      .aggregate([
+        {
+          $match: { project_id }
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'user_id',
+            foreignField: '_id',
+            as: 'user_info'
+          }
+        },
+        {
+          $facet: {
+            metadata: [{ $count: 'total' }],
+            data: [{ $skip: (page - 1) * limit }, { $limit: limit }]
+          }
+        },
+        {
+          $project: {
+            user_info: {
+              password: 0,
+              forgot_password_token: 0
+            }
+          }
+        },
+        {
+          $addFields: {
+            metadata: {
+              $arrayElemAt: ['$metadata', 0]
+            }
+          }
+        },
+        {
+          $addFields: {
+            total_page: {
+              $ceil: { $divide: ['$metadata.total', limit] }
+            },
+            page: page
+          }
+        }
+      ])
+      .toArray();
+
+    const response = {
+      page: result[0]?.page || 1,
+      total_page: result[0]?.total_page || 0,
+      limit: limit,
+      data: result[0]?.data || []
+    };
+
+    return response;
+  }
+
+  async rejectApplyInvite(payload: AcceptApplyInviteRequest) {
+    const apply_invite_id = new ObjectId(payload.apply_invite_id);
+    await db.applyInvitations.deleteOne({
+      _id: apply_invite_id
+    });
   }
 }
 

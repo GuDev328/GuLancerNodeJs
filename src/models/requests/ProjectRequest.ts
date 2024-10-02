@@ -50,6 +50,8 @@ export interface ApplyInviteRequest {
 
 export interface GetApplyInviteRequest {
   project_id: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface AcceptApplyInviteRequest {

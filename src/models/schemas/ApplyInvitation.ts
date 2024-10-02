@@ -9,7 +9,7 @@ interface ApplyInvitationType {
   type: InvitationType;
   content: string;
   salary: number;
-  time_to_complete: number; //số ngày dự kiến hoàn thành dự án
+  time_to_complete: Date | null; //số ngày dự kiến hoàn thành dự án
   created_at?: Date;
 }
 
@@ -20,7 +20,7 @@ export default class ApplyInvitation {
   type: InvitationType;
   content: string;
   salary: number;
-  time_to_complete: number; //số ngày dự kiến hoàn thành dự án
+  time_to_complete: Date | null; //số ngày dự kiến hoàn thành dự án
   created_at: Date;
 
   constructor(apply: ApplyInvitationType) {
@@ -30,7 +30,7 @@ export default class ApplyInvitation {
     this.type = apply.type || InvitationType.Apply;
     this.content = apply.content || '';
     this.salary = apply.salary || 0;
-    this.time_to_complete = apply.time_to_complete || 0;
+    this.time_to_complete = apply.time_to_complete || null;
     this.created_at = apply.created_at || DateVi();
   }
 }

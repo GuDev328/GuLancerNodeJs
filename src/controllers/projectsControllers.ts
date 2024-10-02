@@ -48,11 +48,7 @@ export const getApplyInviteController = async (
   req: Request<ParamsDictionary, any, GetApplyInviteRequest>,
   res: Response
 ) => {
-  const result = await db.applyInvitations
-    .find({
-      project_id: new ObjectId(req.body.project_id)
-    })
-    .toArray();
+  const result = await projectsService.getApplyInvite(req.body);
   res.status(200).json({
     result,
     message: 'Lấy danh sách thành công'
@@ -107,9 +103,21 @@ export const acceptApplyInviteController = async (
   const result = await projectsService.acceptApplyInvite(req.body);
   res.status(200).json({
     result,
-    message: 'Lấy danh sách thành công'
+    message: 'Chấp nhận ứng tuyển thành công'
   });
 };
+
+export const rejectApplyInviteController = async (
+  req: Request<ParamsDictionary, any, AcceptApplyInviteRequest>,
+  res: Response
+) => {
+  const result = await projectsService.rejectApplyInvite(req.body);
+  res.status(200).json({
+    result,
+    message: 'Hủy ứng tuyển thành công'
+  });
+};
+
 export const bookmarkController = async (req: Request<ParamsDictionary, any, BookmarkRequest>, res: Response) => {
   await bookmarksService.bookmark(req.body);
   res.status(200).json({
