@@ -526,6 +526,96 @@ class ProjectsService {
       _id: apply_invite_id
     });
   }
+
+  async getMarket() {
+    const result = await db.projects
+      .aggregate([
+        // {
+        //   $match: { status: StatusProject.Recruiting }
+        // },
+        {
+          $lookup: {
+            from: 'Technologies',
+            localField: 'technologies',
+            foreignField: '_id',
+            as: 'technologies_info'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Fields',
+            localField: 'fields',
+            foreignField: '_id',
+            as: 'fields_info'
+          }
+        }
+      ])
+      .toArray();
+
+    const projectResult = {
+      total: result.length,
+      today: result.filter((project) => project.created_at.getDate() === new Date().getDate()).length
+    };
+
+    interface Item {
+      _id: ObjectId;
+      name: string;
+      total: number;
+    }
+
+    let techResult: Item[] = [];
+    let fieldResult: Item[] = [];
+
+    result.map((project) => {
+      project.technologies_info.map((tech: Technology) => {
+        const find = techResult.findIndex((item) => item._id.equals(tech._id));
+        if (find !== -1) {
+          techResult[find].total++;
+        } else {
+          techResult.push({
+            _id: tech._id,
+            name: tech.name,
+            total: 1
+          });
+        }
+      });
+      project.fields_info.map((field: Field) => {
+        const find = fieldResult.findIndex((item) => item._id.equals(field._id));
+        if (find !== -1) {
+          fieldResult[find].total++;
+        } else {
+          fieldResult.push({
+            _id: field._id,
+            name: field.name,
+            total: 1
+          });
+        }
+      });
+    });
+
+    techResult.sort((a, b) => b.total - a.total);
+    fieldResult.sort((a, b) => b.total - a.total);
+    const techResultOther = techResult.slice(5, techResult.length).reduce((acc, item) => acc + item.total, 0);
+    const fieldResultOther = fieldResult.slice(5, fieldResult.length).reduce((acc, item) => acc + item.total, 0);
+    techResult = techResult.slice(0, 5);
+    fieldResult = fieldResult.slice(0, 5);
+    techResult.push({
+      _id: new ObjectId(),
+      name: 'Khác',
+      total: techResultOther
+    });
+    fieldResult.push({
+      _id: new ObjectId(),
+      name: 'Khác',
+      total: fieldResultOther
+    });
+
+    return {
+      projectResult,
+      techResult,
+      fieldResult
+    };
+  }
 }
 
 const projectsService = new ProjectsService();

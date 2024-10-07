@@ -7,6 +7,7 @@ import {
   getAllProjectsController,
   getApplyInviteController,
   getDetailProjectController,
+  getMarketController,
   getMemberController,
   getMyProjectsController,
   rejectApplyInviteController,
@@ -31,7 +32,8 @@ router.post('/accept-apply-invite', accessTokenValidator, catchError(acceptApply
 router.get('/get-member/:id', accessTokenValidator, catchError(getMemberController));
 router.post('/bookmark', accessTokenValidator, bookmarkValidator, catchError(bookmarkController));
 router.post('/unbookmark', accessTokenValidator, bookmarkValidator, catchError(unbookmarkController));
-
 router.post('/get-my-projects', accessTokenValidator, catchError(getMyProjectsController));
+
+router.get('/get-market', catchError(getMarketController));
 
 export default router;

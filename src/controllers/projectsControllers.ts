@@ -189,3 +189,11 @@ export const getMyProjectsController = async (
     message: 'Get My Projects suscess'
   });
 };
+
+export const getMarketController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const result = await projectsService.getMarket();
+  res.status(200).json({
+    result,
+    message: 'Get Market suscess'
+  });
+};
