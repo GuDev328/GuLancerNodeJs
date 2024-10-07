@@ -18,7 +18,7 @@ export interface CreateProjectRequest {
   decodeAuthorization: JwtPayload;
   title: string;
   fields: string[];
-  technologys: string[];
+  technologies: string[];
   salaryType: SalaryType;
   salary: number;
   description: string;
@@ -27,7 +27,7 @@ export interface CreateProjectRequest {
 export interface GetAllProjectRequest {
   key?: string;
   fields?: string[];
-  technologys?: string[];
+  technologies?: string[];
   salaryType?: SalaryType;
   salaryFrom?: number;
   salaryTo?: number;

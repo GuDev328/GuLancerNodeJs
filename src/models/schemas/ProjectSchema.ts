@@ -19,7 +19,7 @@ interface ProjectType {
   salary: number;
   salaryType: SalaryType;
   description: string;
-  technologys: ObjectId[];
+  technologies: ObjectId[];
   fields: ObjectId[];
   created_at?: Date;
 }
@@ -34,7 +34,7 @@ export default class Project {
   salary: number;
   salaryType: SalaryType;
   description: string;
-  technologys: ObjectId[];
+  technologies: ObjectId[];
   fields: ObjectId[];
   created_at: Date;
 
@@ -48,7 +48,7 @@ export default class Project {
     this.salary = project.salary || 0;
     this.salaryType = project.salaryType || SalaryType.Project;
     this.description = project.description || '';
-    this.technologys = project.technologys;
+    this.technologies = project.technologies;
     this.fields = project.fields;
     this.created_at = project.created_at || DateVi();
   }

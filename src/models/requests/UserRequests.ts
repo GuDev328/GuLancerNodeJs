@@ -67,9 +67,9 @@ export interface UpdateMeRequest {
   avatar?: string;
   cover_photo?: string;
   phone_number?: string;
-  technology: string[];
-  description_markdown?: string;
-  description_html?: string;
+  technologies: string[];
+  description?: string;
+  fields: string[];
 }
 
 export interface FollowRequest {

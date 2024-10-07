@@ -35,7 +35,7 @@ class ProjectsService {
       })
     );
     const techsFinds = await Promise.all(
-      payload.technologys.map(async (tech) => {
+      payload.technologies.map(async (tech) => {
         const techFind = await db.technologies.findOne<Technology>({ name: tech });
         if (!techFind) {
           const init = await db.technologies.insertOne(new Technology({ name: tech }));
@@ -54,7 +54,7 @@ class ProjectsService {
       salary: Number(payload.salary),
       salaryType: payload.salaryType,
       description: payload.description,
-      technologys: techsFinds,
+      technologies: techsFinds,
       fields: fieldsFinds
     });
 
@@ -101,7 +101,7 @@ class ProjectsService {
   async getAll(page: number, limit: number, payload: GetAllProjectRequest) {
     const regexKey = payload.key ? new RegExp(payload.key, 'i') : null;
     let fieldsId = payload.fields?.map((field) => new ObjectId(field)) || [];
-    let techsId = payload.technologys?.map((tech) => new ObjectId(tech)) || [];
+    let techsId = payload.technologies?.map((tech) => new ObjectId(tech)) || [];
 
     if (fieldsId.length === 0 && regexKey) {
       const res = await db.fields.find({ name: regexKey }).toArray();
@@ -135,7 +135,7 @@ class ProjectsService {
       {
         $lookup: {
           from: 'Technologies',
-          localField: 'technologys',
+          localField: 'technologies',
           foreignField: '_id',
           as: 'technologies_info'
         }
@@ -195,7 +195,7 @@ class ProjectsService {
               $or: [
                 regexKey ? { title: regexKey } : {},
                 fieldsId?.length ? { fields: { $elemMatch: { $in: fieldsId } } } : null,
-                techsId?.length ? { technologys: { $elemMatch: { $in: techsId } } } : null
+                techsId?.length ? { technologies: { $elemMatch: { $in: techsId } } } : null
               ].filter(Boolean)
             },
             {
@@ -225,7 +225,7 @@ class ProjectsService {
               ].filter(Boolean)
             },
             {
-              ...(techsId?.length ? { technologys: { $elemMatch: { $in: techsId } } } : null),
+              ...(techsId?.length ? { technologies: { $elemMatch: { $in: techsId } } } : null),
               ...(payload.salaryType ? { salaryType: payload.salaryType } : {}),
               ...(payload.salaryFrom != null && payload.salaryTo != null
                 ? { salary: { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
@@ -250,7 +250,7 @@ class ProjectsService {
               $or: [
                 regexKey ? { title: regexKey } : {},
 
-                techsId?.length ? { technologys: { $elemMatch: { $in: techsId } } } : null
+                techsId?.length ? { technologies: { $elemMatch: { $in: techsId } } } : null
               ].filter(Boolean)
             },
             {
@@ -277,7 +277,7 @@ class ProjectsService {
             {
               ...(regexKey ? { title: regexKey } : {}),
               ...(fieldsId?.length ? { fields: { $elemMatch: { $in: fieldsId } } } : null),
-              ...(techsId?.length ? { technologys: { $elemMatch: { $in: techsId } } } : null),
+              ...(techsId?.length ? { technologies: { $elemMatch: { $in: techsId } } } : null),
               ...(payload.salaryType ? { salaryType: payload.salaryType } : {}),
               ...(payload.salaryFrom != null && payload.salaryTo != null
                 ? { salary: { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
@@ -294,11 +294,11 @@ class ProjectsService {
     ];
 
     const query =
-      payload.fields?.length && payload.technologys?.length
+      payload.fields?.length && payload.technologies?.length
         ? queryHasTechField
         : payload.fields?.length
           ? queryHasField
-          : payload.technologys?.length
+          : payload.technologies?.length
             ? queryHasTech
             : queryNoTechField;
     const result = await db.projects.aggregate(query).toArray();

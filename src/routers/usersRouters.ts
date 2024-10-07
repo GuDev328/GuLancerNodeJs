@@ -63,9 +63,8 @@ router.patch(
     'avatar',
     'cover_photo',
     'phone_number',
-    'technology',
-    'description_markdown',
-    'description_html'
+    'technologies',
+    'description'
   ]),
   catchError(updateMeController)
 );

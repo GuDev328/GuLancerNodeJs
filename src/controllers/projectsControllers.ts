@@ -75,7 +75,7 @@ export const getDetailProjectController = async (req: Request<ParamsDictionary, 
       {
         $lookup: {
           from: 'Technologies',
-          localField: 'technologys',
+          localField: 'technologies',
           foreignField: '_id',
           as: 'tech_info'
         }

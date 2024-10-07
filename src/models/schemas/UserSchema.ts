@@ -12,8 +12,7 @@ interface UserType {
   created_at?: Date;
   updated_at?: Date;
   forgot_password_token?: string;
-  description_markdown?: string;
-  description_html?: string;
+  description?: string;
   bio?: string;
   location?: string;
   website?: string;
@@ -21,10 +20,11 @@ interface UserType {
   avatar?: string;
   cover_photo?: string;
   role: RoleType;
-  techology?: ObjectId[];
+  technologies?: ObjectId[];
   project_done?: number;
   star?: number;
   verified?: boolean;
+  fields?: ObjectId[];
 }
 
 export default class User {
@@ -37,8 +37,7 @@ export default class User {
   created_at: Date;
   updated_at: Date;
   forgot_password_token: string;
-  description_markdown: string;
-  description_html: string;
+  description: string;
   bio: string;
   location: string;
   website: string;
@@ -46,11 +45,11 @@ export default class User {
   avatar: string;
   cover_photo: string;
   role: RoleType;
-  techology: ObjectId[];
+  technologies: ObjectId[];
   project_done: number;
   star: number;
   verified: boolean;
-
+  fields: ObjectId[];
   constructor(user: UserType) {
     this._id = user._id || new ObjectId();
     this.name = user.name || '';
@@ -61,8 +60,7 @@ export default class User {
     this.created_at = DateVi();
     this.updated_at = DateVi();
     this.forgot_password_token = user.forgot_password_token || '';
-    this.description_markdown = user.description_markdown || '';
-    this.description_html = user.description_html || '';
+    this.description = user.description || '';
     this.bio = user.bio || '';
     this.location = user.location || '';
     this.website = user.website || '';
@@ -70,9 +68,10 @@ export default class User {
     this.avatar = user.avatar || '';
     this.cover_photo = user.cover_photo || '';
     this.role = user.role || RoleType.Freelancer;
-    this.techology = user.techology || [];
+    this.technologies = user.technologies || [];
     this.project_done = 0;
     this.star = 0;
     this.verified = user.verified || false;
+    this.fields = user.fields || [];
   }
 }

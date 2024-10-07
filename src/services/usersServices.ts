@@ -31,6 +31,8 @@ import axios from 'axios';
 import { nanoid } from 'nanoid';
 import { env } from '~/constants/config';
 import { DateVi } from '~/utils/date-vi';
+import Field from '~/models/schemas/FieldSchema';
+import Technology from '~/models/schemas/TechnologySchema';
 
 class UsersService {
   constructor() {}
@@ -298,31 +300,79 @@ class UsersService {
 
   async getMe(payload: GetMeRequest) {
     const userId = payload.decodeAuthorization.payload.userId;
-    const user = await db.users.findOne(
-      { _id: new ObjectId(userId) },
-      {
-        projection: {
-          password: 0,
-          forgot_password_token: 0
+    const user = await db.users
+      .aggregate([
+        {
+          $match: { _id: new ObjectId(userId) }
+        },
+        {
+          $lookup: {
+            from: 'Fields',
+            localField: 'fields',
+            foreignField: '_id',
+            as: 'fields_info'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Technologies',
+            localField: 'technologies',
+            foreignField: '_id',
+            as: 'technologies_info'
+          }
+        },
+        {
+          $project: {
+            password: 0,
+            forgot_password_token: 0
+          }
         }
-      }
-    );
-    return user;
+      ])
+      .toArray();
+    return user[0];
   }
 
   async updateMe(payload: UpdateMeRequest) {
     const userId = payload.decodeAuthorization.payload.userId;
     const { decodeAuthorization, ...payloadWithOutJWT } = payload;
+    const fieldsFinds = await Promise.all(
+      payload.fields.map(async (field) => {
+        const fieldFind = await db.fields.findOne<Field>({ name: field });
+        if (!fieldFind) {
+          const init = await db.fields.insertOne(new Field({ name: field }));
+          return new ObjectId(init.insertedId);
+        } else {
+          return fieldFind._id;
+        }
+      })
+    );
+    const techsFinds = await Promise.all(
+      payload.technologies.map(async (tech) => {
+        const techFind = await db.technologies.findOne<Technology>({ name: tech });
+        if (!techFind) {
+          const init = await db.technologies.insertOne(new Technology({ name: tech }));
+          return new ObjectId(init.insertedId);
+        } else {
+          return new ObjectId(techFind._id);
+        }
+      })
+    );
     const newPayload = payload.date_of_birth
-      ? { ...payloadWithOutJWT, date_of_birth: new Date(payload.date_of_birth) }
+      ? {
+          ...payloadWithOutJWT,
+          date_of_birth: new Date(payload.date_of_birth),
+          technologies: techsFinds,
+          fields: fieldsFinds
+        }
       : payloadWithOutJWT;
+
     const user = await db.users.findOneAndUpdate(
       {
         _id: new ObjectId(userId)
       },
       {
         $set: {
-          ...(newPayload as UpdateMeRequest & { date_of_birth: Date })
+          ...(newPayload as UpdateMeRequest & { date_of_birth: Date; technologies: ObjectId[]; fields: ObjectId[] })
         }
       },
       {
