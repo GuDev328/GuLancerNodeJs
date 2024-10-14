@@ -18,6 +18,7 @@ interface UserType {
   website?: string;
   username: string;
   avatar?: string;
+  salary?: number;
   cover_photo?: string;
   role: RoleType;
   technologies?: ObjectId[];
@@ -44,6 +45,7 @@ export default class User {
   username: string;
   avatar: string;
   cover_photo: string;
+  salary: number;
   role: RoleType;
   technologies: ObjectId[];
   project_done: number;
@@ -59,6 +61,7 @@ export default class User {
     this.password = user.password || '';
     this.created_at = DateVi();
     this.updated_at = DateVi();
+    this.salary = user.salary || 0;
     this.forgot_password_token = user.forgot_password_token || '';
     this.description = user.description || '';
     this.bio = user.bio || '';

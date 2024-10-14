@@ -480,6 +480,58 @@ class UsersService {
     );
     return user;
   }
+
+  async getProfileByID(id: string) {
+    if (!ObjectId.isValid(id)) {
+      throw new ErrorWithStatus({
+        message: 'ID không hợp lệ',
+        status: httpStatus.BAD_REQUEST
+      });
+    }
+    let result: any = {};
+    const userFind = await db.users.findOne({ _id: new ObjectId(id) });
+    if (!userFind) {
+      throw new ErrorWithStatus({
+        message: 'Không tìm thấy người dùng',
+        status: httpStatus.NOT_FOUND
+      });
+    }
+    if (userFind.role === RoleType.Freelancer) {
+      const user = await db.users
+        .aggregate([
+          {
+            $match: { _id: new ObjectId(id) }
+          },
+          {
+            $lookup: {
+              from: 'Fields',
+              localField: 'fields',
+              foreignField: '_id',
+              as: 'fields_info'
+            }
+          },
+          {
+            $lookup: {
+              from: 'Technologies',
+              localField: 'technologies',
+              foreignField: '_id',
+              as: 'technologies_info'
+            }
+          },
+          {
+            $project: {
+              password: 0,
+              forgot_password_token: 0
+            }
+          }
+        ])
+        .toArray();
+      result = user[0];
+    } else {
+      result = userFind;
+    }
+    return result;
+  }
 }
 
 const usersService = new UsersService();

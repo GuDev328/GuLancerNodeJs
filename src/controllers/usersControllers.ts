@@ -155,6 +155,15 @@ export const getProfileController = async (req: Request<ParamsDictionary, any, a
   });
 };
 
+export const getProfileByIDController = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await userService.getProfileByID(id);
+  res.status(200).json({
+    result,
+    message: 'Get profile by id sucess'
+  });
+};
+
 export const followController = async (req: Request<ParamsDictionary, any, FollowRequest>, res: Response) => {
   const result = await userService.follow(req.body);
   res.status(200).json({

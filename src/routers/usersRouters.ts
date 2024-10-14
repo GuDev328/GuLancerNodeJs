@@ -4,6 +4,7 @@ import {
   followController,
   forgotPasswordController,
   getMeController,
+  getProfileByIDController,
   getProfileController,
   initRoleController,
   loginController,
@@ -75,5 +76,6 @@ router.post('/follow', accessTokenValidator, followValidator, catchError(followC
 router.post('/unfollow', accessTokenValidator, unfollowValidator, catchError(unfollowController));
 
 router.post('/change-password', accessTokenValidator, changePasswordValidator, catchError(changePasswordController));
+router.get('/profile/:id', catchError(getProfileByIDController));
 
 export default router;
