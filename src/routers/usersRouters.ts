@@ -49,13 +49,14 @@ router.post(
   catchError(resetPasswordController)
 );
 router.get('/get-me', accessTokenValidator, catchError(getMeController));
-router.patch(
+router.post(
   '/update-me',
   accessTokenValidator,
   updateMeValidator,
   filterMiddleware<UpdateMeRequest>([
     'decodeAuthorization',
     'name',
+    'gender',
     'date_of_birth',
     'bio',
     'location',
@@ -64,6 +65,7 @@ router.patch(
     'avatar',
     'cover_photo',
     'phone_number',
+    'fields',
     'technologies',
     'description'
   ]),

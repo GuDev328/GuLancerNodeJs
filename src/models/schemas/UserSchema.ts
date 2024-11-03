@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { RoleType } from '~/constants/enum';
+import { GenderEnum, RoleType } from '~/constants/enum';
 import { DateVi } from '~/utils/date-vi';
 
 interface UserType {
@@ -26,6 +26,7 @@ interface UserType {
   star?: number;
   verified?: boolean;
   fields?: ObjectId[];
+  gender?: GenderEnum;
 }
 
 export default class User {
@@ -52,6 +53,7 @@ export default class User {
   star: number;
   verified: boolean;
   fields: ObjectId[];
+  gender: GenderEnum;
   constructor(user: UserType) {
     this._id = user._id || new ObjectId();
     this.name = user.name || '';
@@ -61,6 +63,7 @@ export default class User {
     this.password = user.password || '';
     this.created_at = DateVi();
     this.updated_at = DateVi();
+    this.gender = user.gender || GenderEnum.Male;
     this.salary = user.salary || 0;
     this.forgot_password_token = user.forgot_password_token || '';
     this.description = user.description || '';
@@ -68,12 +71,15 @@ export default class User {
     this.location = user.location || '';
     this.website = user.website || '';
     this.username = user.username || '';
-    this.avatar = user.avatar || '';
-    this.cover_photo = user.cover_photo || '';
+    this.avatar =
+      user.avatar || user.gender === GenderEnum.Male
+        ? 'https://gulancer.s3.ap-southeast-1.amazonaws.com/common/avtMale.png'
+        : 'https://gulancer.s3.ap-southeast-1.amazonaws.com/common/avtFemale.png';
+    this.cover_photo = user.cover_photo || 'https://gulancer.s3.ap-southeast-1.amazonaws.com/common/cover_photo.jpg';
     this.role = user.role || RoleType.Freelancer;
     this.technologies = user.technologies || [];
     this.project_done = 0;
-    this.star = 0;
+    this.star = 5;
     this.verified = user.verified || false;
     this.fields = user.fields || [];
   }

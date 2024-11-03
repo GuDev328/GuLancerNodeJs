@@ -1,6 +1,6 @@
 import { JwtPayload } from 'jsonwebtoken';
 import User from '../schemas/UserSchema';
-import { RoleType } from '~/constants/enum';
+import { GenderEnum, RoleType } from '~/constants/enum';
 
 export interface RegisterRequest {
   name: string;
@@ -59,6 +59,7 @@ export interface GetMeRequest {
 export interface UpdateMeRequest {
   decodeAuthorization: JwtPayload;
   name?: string;
+  gender?: GenderEnum;
   date_of_birth?: string;
   bio?: string;
   location?: string;

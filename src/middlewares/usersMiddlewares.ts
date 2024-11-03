@@ -310,11 +310,12 @@ export const updateMeValidator = validate(
         errorMessage: 'Độ dài của username từ 1 đến 25 ký tự'
       },
       custom: {
-        options: async (value: string) => {
+        options: async (value: string, { req }) => {
           const result = await usersService.checkUsernameExists(value);
-          if (result) {
+          if (result && result._id.toString() !== req.body.decodeAuthorization.payload.userId.toString()) {
             throw new Error('Username đã tồn tại');
           }
+
           return true;
         }
       }

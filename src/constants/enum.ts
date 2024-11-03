@@ -4,6 +4,11 @@ export enum TokenType {
   FogotPasswordToken
 }
 
+export enum GenderEnum {
+  Female,
+  Male
+}
+
 export interface Media {
   url: string;
   type: MediaType;
