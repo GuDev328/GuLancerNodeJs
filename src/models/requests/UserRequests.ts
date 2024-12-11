@@ -63,6 +63,7 @@ export interface UpdateMeRequest {
   date_of_birth?: string;
   bio?: string;
   location?: string;
+  salary?: number;
   website?: string;
   username?: string;
   avatar?: string;

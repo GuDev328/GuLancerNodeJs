@@ -286,14 +286,6 @@ export const updateMeValidator = validate(
       optional: true,
       isISO8601: { options: { strict: true, strictSeparator: true } }
     },
-    bio: {
-      optional: true,
-      isString: { errorMessage: 'Tiểu sử không đúng định dạng' },
-      isLength: {
-        options: { min: 1, max: 200 },
-        errorMessage: 'Độ dài của tiểu sử từ 1 đến 200 ký tự'
-      }
-    },
     location: {
       optional: true,
       isString: { errorMessage: 'Địa chỉ không đúng định dạng' }

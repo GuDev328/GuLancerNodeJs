@@ -335,28 +335,34 @@ class UsersService {
   async updateMe(payload: UpdateMeRequest) {
     const userId = payload.decodeAuthorization.payload.userId;
     const { decodeAuthorization, ...payloadWithOutJWT } = payload;
-    const fieldsFinds = await Promise.all(
-      payload.fields.map(async (field) => {
-        const fieldFind = await db.fields.findOne<Field>({ name: field });
-        if (!fieldFind) {
-          const init = await db.fields.insertOne(new Field({ name: field }));
-          return new ObjectId(init.insertedId);
-        } else {
-          return fieldFind._id;
-        }
-      })
-    );
-    const techsFinds = await Promise.all(
-      payload.technologies.map(async (tech) => {
-        const techFind = await db.technologies.findOne<Technology>({ name: tech });
-        if (!techFind) {
-          const init = await db.technologies.insertOne(new Technology({ name: tech }));
-          return new ObjectId(init.insertedId);
-        } else {
-          return new ObjectId(techFind._id);
-        }
-      })
-    );
+    let fieldsFinds: ObjectId[] = [];
+    let techsFinds: ObjectId[] = [];
+    if (payload.fields && payload.fields.length > 0) {
+      fieldsFinds = await Promise.all(
+        payload.fields.map(async (field) => {
+          const fieldFind = await db.fields.findOne<Field>({ name: field });
+          if (!fieldFind) {
+            const init = await db.fields.insertOne(new Field({ name: field }));
+            return new ObjectId(init.insertedId);
+          } else {
+            return fieldFind._id;
+          }
+        })
+      );
+    }
+    if (payload.technologies && payload.technologies.length > 0) {
+      techsFinds = await Promise.all(
+        payload.technologies.map(async (tech) => {
+          const techFind = await db.technologies.findOne<Technology>({ name: tech });
+          if (!techFind) {
+            const init = await db.technologies.insertOne(new Technology({ name: tech }));
+            return new ObjectId(init.insertedId);
+          } else {
+            return new ObjectId(techFind._id);
+          }
+        })
+      );
+    }
     const newPayload = payload.date_of_birth
       ? {
           ...payloadWithOutJWT,

@@ -59,6 +59,7 @@ router.post(
     'gender',
     'date_of_birth',
     'bio',
+    'salary',
     'location',
     'website',
     'username',

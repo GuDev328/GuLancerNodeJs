@@ -427,7 +427,7 @@ class ProjectsService {
         .aggregate([
           {
             $match: {
-              $and: [{ $or: [{ admin_id: user_id }, { 'members.user_id': user_id }] }, { status: payload.type }]
+              $and: [{ $or: [{ admin_id: user_id }, { 'members._id': user_id }] }, { status: payload.type }]
             }
           },
           {
@@ -447,7 +447,7 @@ class ProjectsService {
         ])
         .toArray(),
       db.projects.countDocuments({
-        $and: [{ $or: [{ admin_id: user_id }, { 'members.user_id': user_id }] }, { status: payload.type }]
+        $and: [{ $or: [{ admin_id: user_id }, { 'members._id': user_id }] }, { status: payload.type }]
       })
     ]);
     const response = {
