@@ -5,6 +5,7 @@ import mediasRouters from '~/routers/mediasRouters';
 import tweetsRouters from '~/routers/tweetsRouters';
 import projectsRouters from '~/routers/projectsRouters';
 import searchRouters from '~/routers/searchRouters';
+import tasksRouters from '~/routers/tasksRouters';
 import conversationsRouters from '~/routers/conversationsRouters';
 import fieldRouters from '~/routers/fieldsRouters';
 import technologyRouters from '~/routers/technologyRouters';
@@ -42,6 +43,7 @@ app.use('/conversations', conversationsRouters);
 app.use('/groups', groupsRouters);
 app.use('/technology', technologyRouters);
 app.use('/fields', fieldRouters);
+app.use('/tasks', tasksRouters);
 app.use(defaultsErrorHandler);
 
 const port = env.port || 3030;

@@ -17,6 +17,7 @@ import Project from '~/models/schemas/ProjectSchema';
 import Technology from '~/models/schemas/TechnologySchema';
 import Field from '~/models/schemas/FieldSchema';
 import UserConversation from '~/models/schemas/UserConversation';
+import Task from '~/models/schemas/TaskSchema';
 const uri = env.mongodbURI;
 
 class DatabaseServices {
@@ -108,6 +109,9 @@ class DatabaseServices {
   }
   get userConversations(): Collection<UserConversation> {
     return this.db.collection('UserConversations');
+  }
+  get tasks(): Collection<Task> {
+    return this.db.collection('Tasks');
   }
 }
 

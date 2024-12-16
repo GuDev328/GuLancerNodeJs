@@ -60,6 +60,12 @@ export enum IssuesStatus {
   Processed
 }
 
+export enum TaskStatus {
+  TODO,
+  INPROCESSED,
+  DONE
+}
+
 export enum GroupTypes {
   Public,
   Private
