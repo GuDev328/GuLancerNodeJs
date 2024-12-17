@@ -11,6 +11,14 @@ export interface CreateTaskRequest {
   deadline: Date;
 }
 
+export interface UpdateTaskRequest {
+  _id: string;
+  title: string;
+  description: string;
+  assign_to: string;
+  deadline: Date;
+}
+
 export interface GetAllTaskRequest {
   project_id: string;
   title?: string;

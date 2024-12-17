@@ -47,6 +47,7 @@ export enum StatusProject {
   Recruiting,
   Processing,
   Pause,
+  Paying,
   Complete
 }
 

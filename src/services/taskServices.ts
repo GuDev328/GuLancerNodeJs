@@ -1,6 +1,6 @@
 import db from '~/services/databaseServices';
 import { ObjectId } from 'mongodb';
-import { CreateTaskRequest, GetAllTaskRequest } from '~/models/requests/TaskRequest';
+import { CreateTaskRequest, GetAllTaskRequest, UpdateTaskRequest } from '~/models/requests/TaskRequest';
 import Task from '~/models/schemas/TaskSchema';
 import { TaskStatus } from '~/constants/enum';
 
@@ -22,6 +22,21 @@ class TaskService {
       created_by: new ObjectId(payload.decodeAuthorization.payload.userId)
     });
     await db.tasks.insertOne(task);
+  }
+
+  async updateTask(payload: UpdateTaskRequest) {
+    const { _id, ...payloadNoId } = payload;
+    const result = await db.tasks.findOneAndUpdate(
+      { _id: new ObjectId(_id) },
+      {
+        $set: {
+          ...payloadNoId,
+          assign_to: new ObjectId(payloadNoId.assign_to)
+        }
+      },
+      { returnDocument: 'after' }
+    );
+    return result;
   }
 
   async getAllTask(payload: GetAllTaskRequest, page: number, limit: number) {
@@ -71,6 +86,43 @@ class TaskService {
       result,
       total_page: Math.ceil(total / limit)
     };
+  }
+
+  async getDetail(id: string) {
+    const task = await db.tasks
+      .aggregate([
+        {
+          $match: {
+            _id: new ObjectId(id)
+          }
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'assign_to',
+            foreignField: '_id',
+            as: 'assign_to_info'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'created_by',
+            foreignField: '_id',
+            as: 'created_by_info'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Projects',
+            localField: 'project_id',
+            foreignField: '_id',
+            as: 'project_info'
+          }
+        }
+      ])
+      .toArray();
+    return task[0];
   }
 }
 

@@ -21,6 +21,10 @@ interface ProjectType {
   description: string;
   technologies: ObjectId[];
   fields: ObjectId[];
+  apply_deadline?: Date;
+  number_recruits?: number;
+  start_date?: Date;
+  end_date?: Date;
   created_at?: Date;
 }
 
@@ -36,6 +40,10 @@ export default class Project {
   description: string;
   technologies: ObjectId[];
   fields: ObjectId[];
+  apply_deadline: Date;
+  number_recruits: number;
+  start_date: Date;
+  end_date: Date;
   created_at: Date;
 
   constructor(project: ProjectType) {
@@ -49,7 +57,11 @@ export default class Project {
     this.salaryType = project.salaryType || SalaryType.Project;
     this.description = project.description || '';
     this.technologies = project.technologies;
-    this.fields = project.fields;
+    this.fields = project.fields || [];
+    this.apply_deadline = project.apply_deadline || DateVi();
+    this.number_recruits = project.number_recruits || 0;
+    this.start_date = project.start_date || DateVi();
+    this.end_date = project.end_date || DateVi();
     this.created_at = project.created_at || DateVi();
   }
 }
