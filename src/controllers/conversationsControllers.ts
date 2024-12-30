@@ -21,6 +21,20 @@ export const getConversationController = async (req: Request<ParamsDictionary, a
   });
 };
 
+export const getProjectConversationController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const projectId = req.params.projectId;
+
+  const limit = Number(req.query.limit as string);
+  const pageInput = Number(req.query.page as string);
+  const { result, page, total_page } = await conversationsService.getProjectConversation(projectId, limit, pageInput);
+  res.status(200).json({
+    result,
+    page,
+    total_page,
+    message: 'Get conversation suscess'
+  });
+};
+
 export const getChatUsersController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const userId = req.body.decodeAuthorization.payload.userId;
   const limit = Number(req.query.limit as string);

@@ -105,6 +105,45 @@ class ConversationsService {
     });
     return newConversation;
   }
+
+  async getProjectConversation(projectId: string, limit: number, page: number) {
+    const result = await db.conversations
+      .aggregate([
+        {
+          $match: {
+            receiver_id: new ObjectId(projectId)
+          }
+        },
+        {
+          $sort: { created_at: -1 }
+        },
+        {
+          $skip: limit * (page - 1)
+        },
+        {
+          $limit: limit
+        },
+        {
+          $lookup: {
+            from: 'Users', // Tên collection cần join
+            localField: 'sender_id', // Field trong conversations
+            foreignField: '_id', // Field trong users
+            as: 'sender_info' // Tên field cho dữ liệu join
+          }
+        }
+      ])
+      .toArray();
+
+    const total = await db.conversations.countDocuments({
+      receiver_id: new ObjectId(projectId)
+    });
+
+    return {
+      result,
+      page,
+      total_page: Math.ceil(total / limit)
+    };
+  }
 }
 
 const conversationsService = new ConversationsService();

@@ -87,6 +87,32 @@ const initializeSocket = (httpServer: ServerHttp) => {
       delete users[userId];
     });
 
+    socket.on('joinRoomPChat', (room) => {
+      socket.join(room);
+    });
+    socket.on('leaveRoomPChat', (room) => {
+      socket.leave(room);
+    });
+
+    socket.on('newPChat', async (room, data) => {
+      console.log('newPChat', data);
+      const contentChat = data.content || '';
+      const medias = data.medias || [];
+      const receiverUserId = data.receiver_id;
+      const fromUserId = data.sender_id;
+
+      await db.conversations.insertOne(
+        new Conversation({
+          sender_id: new ObjectId(fromUserId),
+          receiver_id: new ObjectId(receiverUserId),
+          content: contentChat,
+          medias: medias
+        })
+      );
+
+      io.to(room).emit('chatPUpdated', data);
+    });
+
     socket.on('newComment', (room, comment) => {
       io.to(room).emit('commentUpdated', comment);
     });
