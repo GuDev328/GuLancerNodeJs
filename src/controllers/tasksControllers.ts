@@ -1,7 +1,12 @@
 import { Request, Response } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ObjectId } from 'mongodb';
-import { CreateTaskRequest, GetAllTaskRequest, UpdateTaskRequest } from '~/models/requests/TaskRequest';
+import {
+  ChangeStatusTaskRequest,
+  CreateTaskRequest,
+  GetAllTaskRequest,
+  UpdateTaskRequest
+} from '~/models/requests/TaskRequest';
 import taskService from '~/services/taskServices';
 
 export const createTaskController = async (req: Request<ParamsDictionary, any, CreateTaskRequest>, res: Response) => {
@@ -18,6 +23,15 @@ export const updateTaskController = async (req: Request<ParamsDictionary, any, U
   });
 };
 
+export const changeStatusTaskController = async (
+  req: Request<ParamsDictionary, any, ChangeStatusTaskRequest>,
+  res: Response
+) => {
+  await taskService.changeStatusTask(req.body);
+  res.status(200).json({
+    message: 'Cập nhật công việc thành công'
+  });
+};
 export const getAllTaskController = async (req: Request<ParamsDictionary, any, GetAllTaskRequest>, res: Response) => {
   const { result, page, limit, total_page } = await taskService.getAllTask(
     req.body,

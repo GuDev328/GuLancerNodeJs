@@ -1,6 +1,11 @@
 import db from '~/services/databaseServices';
 import { ObjectId } from 'mongodb';
-import { CreateTaskRequest, GetAllTaskRequest, UpdateTaskRequest } from '~/models/requests/TaskRequest';
+import {
+  ChangeStatusTaskRequest,
+  CreateTaskRequest,
+  GetAllTaskRequest,
+  UpdateTaskRequest
+} from '~/models/requests/TaskRequest';
 import Task from '~/models/schemas/TaskSchema';
 import { TaskStatus } from '~/constants/enum';
 
@@ -123,6 +128,19 @@ class TaskService {
       ])
       .toArray();
     return task[0];
+  }
+
+  async changeStatusTask(payload: ChangeStatusTaskRequest) {
+    const result = await db.tasks.findOneAndUpdate(
+      { _id: new ObjectId(payload._id) },
+      {
+        $set: {
+          status: payload.status
+        }
+      },
+      { returnDocument: 'after' }
+    );
+    return result;
   }
 }
 

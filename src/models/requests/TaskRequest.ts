@@ -19,6 +19,11 @@ export interface UpdateTaskRequest {
   deadline: Date;
 }
 
+export interface ChangeStatusTaskRequest {
+  _id: string;
+  status: TaskStatus;
+}
+
 export interface GetAllTaskRequest {
   project_id: string;
   title?: string;

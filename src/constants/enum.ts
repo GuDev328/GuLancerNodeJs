@@ -64,7 +64,8 @@ export enum IssuesStatus {
 export enum TaskStatus {
   TODO,
   INPROCESSED,
-  DONE
+  DONE,
+  CANCEL
 }
 
 export enum GroupTypes {
