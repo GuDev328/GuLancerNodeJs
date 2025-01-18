@@ -3,6 +3,7 @@ import {
   ChangePasswordRequest,
   FollowRequest,
   ForgotPasswordRequest,
+  GetListRequest,
   GetMeRequest,
   InitRoleRequest,
   LoginRequest,
@@ -19,7 +20,7 @@ import bcrypt from 'bcrypt';
 import User from '~/models/schemas/UserSchema';
 import db from '~/services/databaseServices';
 import { signToken, verifyToken } from '~/utils/jwt';
-import { RoleType, SendEmail, TokenType } from '~/constants/enum';
+import { AccountSortBy, RoleType, SendEmail, TokenType } from '~/constants/enum';
 import { ErrorWithStatus } from '~/models/Errors';
 import { RefreshToken } from '~/models/schemas/RefreshTokenSchema';
 import { ObjectId } from 'mongodb';
@@ -537,6 +538,59 @@ class UsersService {
       result = userFind;
     }
     return result;
+  }
+
+  async getList(payload: GetListRequest, page: number, limit: number) {
+    const regexPattern = new RegExp(payload.key, 'i');
+    const [result, countUser] = await Promise.all([
+      db.users
+        .aggregate([
+          {
+            $match: {
+              $or: [
+                { username: { $regex: regexPattern } },
+                { name: { $regex: regexPattern } },
+                { email: { $regex: regexPattern } }
+              ],
+              ...(payload.role ? [{ role: payload.role }] : [])
+            }
+          },
+          ...(payload.sortBy === AccountSortBy.Star
+            ? [{ $sort: { star: -1 } }]
+            : payload.sortBy === AccountSortBy.ProjectDone
+              ? [{ $sort: { project_done: -1 } }]
+              : []),
+          {
+            $project: {
+              password: 0,
+              created_at: 0,
+              emailVerifyToken: 0,
+              forgot_password_token: 0,
+              updated_at: 0,
+              twitter_circle: 0
+            }
+          },
+          {
+            $skip: limit * (page - 1)
+          },
+          {
+            $limit: limit
+          }
+        ])
+        .toArray(),
+
+      db.users.countDocuments({
+        $or: [{ username: { $regex: regexPattern } }, { name: { $regex: regexPattern } }],
+        ...(payload.role ? [{ role: payload.role }] : [])
+      })
+    ]);
+
+    return {
+      total_page: Math.ceil(countUser / limit),
+      page,
+      limit,
+      result
+    };
   }
 }
 

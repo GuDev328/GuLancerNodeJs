@@ -8,6 +8,7 @@ import {
   ChangePasswordRequest,
   FollowRequest,
   ForgotPasswordRequest,
+  GetListRequest,
   GetMeRequest,
   InitRoleRequest,
   LoginRequest,
@@ -186,5 +187,14 @@ export const changePasswordController = async (
   res.status(200).json({
     result,
     message: 'Change Password sucess'
+  });
+};
+
+export const getListAccount = async (req: Request<ParamsDictionary, any, GetListRequest>, res: Response) => {
+  const { limit, page } = req.query;
+  const result = await userService.getList(req.body, Number(page), Number(limit));
+  res.status(200).json({
+    ...result,
+    message: 'Lấy danh sách tài khoản thành công'
   });
 };

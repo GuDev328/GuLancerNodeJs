@@ -3,6 +3,7 @@ import {
   changePasswordController,
   followController,
   forgotPasswordController,
+  getListAccount,
   getMeController,
   getProfileByIDController,
   getProfileController,
@@ -77,8 +78,9 @@ router.get('/get-profile/:username', getProfileValidator, catchError(getProfileC
 
 router.post('/follow', accessTokenValidator, followValidator, catchError(followController));
 router.post('/unfollow', accessTokenValidator, unfollowValidator, catchError(unfollowController));
-
 router.post('/change-password', accessTokenValidator, changePasswordValidator, catchError(changePasswordController));
 router.get('/profile/:id', catchError(getProfileByIDController));
+
+router.post('/list', accessTokenValidator, catchError(getListAccount));
 
 export default router;

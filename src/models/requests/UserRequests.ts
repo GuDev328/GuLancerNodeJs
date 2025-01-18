@@ -1,6 +1,6 @@
 import { JwtPayload } from 'jsonwebtoken';
 import User from '../schemas/UserSchema';
-import { GenderEnum, RoleType } from '~/constants/enum';
+import { AccountSortBy, GenderEnum, RoleType } from '~/constants/enum';
 
 export interface RegisterRequest {
   name: string;
@@ -89,6 +89,12 @@ export interface ChangePasswordRequest {
   oldPassword: string;
   newPassword: string;
   confirmPassword: string;
+}
+
+export interface GetListRequest {
+  key: string;
+  role: number;
+  sortBy: AccountSortBy;
 }
 
 export interface AddUsersToCircleRequest {

@@ -19,6 +19,12 @@ export enum MediaType {
   VideoHLS
 }
 
+export enum AccountSortBy {
+  None,
+  Star,
+  ProjectDone
+}
+
 export enum TweetTypeEnum {
   Tweet,
   Retweet,
