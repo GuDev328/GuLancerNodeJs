@@ -198,3 +198,12 @@ export const getListAccount = async (req: Request<ParamsDictionary, any, GetList
     message: 'Lấy danh sách tài khoản thành công'
   });
 };
+
+export const deleteAccountController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.body;
+  const result = await userService.delete(id);
+  res.status(200).json({
+    result,
+    message: 'Xoá thành công'
+  });
+};

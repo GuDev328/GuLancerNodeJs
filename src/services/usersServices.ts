@@ -552,7 +552,7 @@ class UsersService {
                 { name: { $regex: regexPattern } },
                 { email: { $regex: regexPattern } }
               ],
-              ...(payload.role ? [{ role: payload.role }] : [])
+              ...(payload.role !== undefined && payload.role !== '' ? { role: payload.role } : {})
             }
           },
           ...(payload.sortBy === AccountSortBy.Star
@@ -580,8 +580,12 @@ class UsersService {
         .toArray(),
 
       db.users.countDocuments({
-        $or: [{ username: { $regex: regexPattern } }, { name: { $regex: regexPattern } }],
-        ...(payload.role ? [{ role: payload.role }] : [])
+        $or: [
+          { username: { $regex: regexPattern } },
+          { name: { $regex: regexPattern } },
+          { email: { $regex: regexPattern } }
+        ],
+        ...(payload.role !== undefined && payload.role !== '' ? { role: payload.role } : {})
       })
     ]);
 
@@ -591,6 +595,10 @@ class UsersService {
       limit,
       result
     };
+  }
+
+  async delete(id: string) {
+    return db.users.deleteOne({ _id: new ObjectId(new ObjectId(id)) });
   }
 }
 

@@ -93,7 +93,7 @@ export interface ChangePasswordRequest {
 
 export interface GetListRequest {
   key: string;
-  role: number;
+  role: number | string;
   sortBy: AccountSortBy;
 }
 

@@ -39,7 +39,14 @@ export enum SendEmail {
 export enum RoleType {
   Freelancer,
   Employer,
-  Undefined
+  Undefined,
+  Admin
+}
+
+export enum AccountStatus {
+  Active,
+  DisActive,
+  Blocked
 }
 
 export enum RoleMemberProject {

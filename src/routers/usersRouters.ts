@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   changePasswordController,
+  deleteAccountController,
   followController,
   forgotPasswordController,
   getListAccount,
@@ -24,6 +25,7 @@ import {
   followValidator,
   forgotPasswordValidator,
   getProfileValidator,
+  isAdminValidator,
   loginValidator,
   refreshTokenValidator,
   registerValidator,
@@ -82,5 +84,6 @@ router.post('/change-password', accessTokenValidator, changePasswordValidator, c
 router.get('/profile/:id', catchError(getProfileByIDController));
 
 router.post('/list', accessTokenValidator, catchError(getListAccount));
+router.post('/delete', accessTokenValidator, isAdminValidator, catchError(deleteAccountController));
 
 export default router;

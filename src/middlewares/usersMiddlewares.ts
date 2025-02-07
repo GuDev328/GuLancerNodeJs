@@ -166,7 +166,7 @@ export const registerValidator = validate(
       role: {
         notEmpty: { errorMessage: 'Role không được để trống' },
         isIn: {
-          options: [[0, 1]],
+          options: [[0, 1, 2, 3]],
           errorMessage: 'Role không hợp lệ'
         }
       }
@@ -428,6 +428,19 @@ export const isLoginValidator = (middleware: (req: Request, res: Response, next:
     }
     next();
   };
+};
+
+export const isAdminValidator = (req: Request, res: Response, next: NextFunction) => {
+  const { role } = req.body.decodeAuthorization.payload;
+  if (role !== RoleType.Admin) {
+    return next(
+      new ErrorWithStatus({
+        message: 'Bạn không có quyền ',
+        status: httpStatus.FORBIDDEN
+      })
+    );
+  }
+  next();
 };
 
 export const getConversationsValidator = validate(

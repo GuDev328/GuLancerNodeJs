@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { GenderEnum, RoleType } from '~/constants/enum';
+import { AccountStatus, GenderEnum, RoleType } from '~/constants/enum';
 import { DateVi } from '~/utils/date-vi';
 
 interface UserType {
@@ -27,6 +27,7 @@ interface UserType {
   verified?: boolean;
   fields?: ObjectId[];
   gender?: GenderEnum;
+  status?: AccountStatus;
 }
 
 export default class User {
@@ -54,6 +55,7 @@ export default class User {
   verified: boolean;
   fields: ObjectId[];
   gender: GenderEnum;
+  status: AccountStatus;
   constructor(user: UserType) {
     this._id = user._id || new ObjectId();
     this.name = user.name || '';
@@ -82,5 +84,6 @@ export default class User {
     this.star = 5;
     this.verified = user.verified || false;
     this.fields = user.fields || [];
+    this.status = user.status || AccountStatus.Active;
   }
 }
