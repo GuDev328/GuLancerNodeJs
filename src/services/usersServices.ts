@@ -10,6 +10,7 @@ import {
   LogoutRequest,
   RefreshTokenRequest,
   RegisterRequest,
+  RequestVerifyRequest,
   ResendVerifyEmailRequest,
   ResetPasswordRequest,
   UnfollowRequest,
@@ -20,7 +21,7 @@ import bcrypt from 'bcrypt';
 import User from '~/models/schemas/UserSchema';
 import db from '~/services/databaseServices';
 import { signToken, verifyToken } from '~/utils/jwt';
-import { AccountSortBy, RoleType, SendEmail, TokenType } from '~/constants/enum';
+import { AccountSortBy, RoleType, SendEmail, TokenType, VerifyStatus } from '~/constants/enum';
 import { ErrorWithStatus } from '~/models/Errors';
 import { RefreshToken } from '~/models/schemas/RefreshTokenSchema';
 import { ObjectId } from 'mongodb';
@@ -599,6 +600,104 @@ class UsersService {
 
   async delete(id: string) {
     return db.users.deleteOne({ _id: new ObjectId(new ObjectId(id)) });
+  }
+
+  async requestVerify(payload: RequestVerifyRequest) {
+    await db.users.findOneAndUpdate(
+      {
+        _id: new ObjectId(payload.decodeAuthorization.payload.userId)
+      },
+      {
+        $set: {
+          verified_info: {
+            status: VerifyStatus.Pending,
+            img_front: payload.img_front,
+            img_back: payload.img_back,
+            vid_portrait: payload.vid_portrait
+          }
+        }
+      }
+    );
+    return;
+  }
+
+  async getListRequestVerify(key: string, page: number, limit: number) {
+    const regexPattern = new RegExp(key, 'i');
+    const [result, countUser] = await Promise.all([
+      db.users
+        .aggregate([
+          {
+            $match: {
+              $or: [
+                { username: { $regex: regexPattern } },
+                { name: { $regex: regexPattern } },
+                { email: { $regex: regexPattern } }
+              ],
+              'verified_info.status': VerifyStatus.Pending
+            }
+          },
+
+          {
+            $project: {
+              password: 0,
+              created_at: 0,
+              emailVerifyToken: 0,
+              forgot_password_token: 0,
+              updated_at: 0,
+              twitter_circle: 0
+            }
+          },
+          {
+            $skip: limit * (page - 1)
+          },
+          {
+            $limit: limit
+          }
+        ])
+        .toArray(),
+
+      db.users.countDocuments({
+        $or: [
+          { username: { $regex: regexPattern } },
+          { name: { $regex: regexPattern } },
+          { email: { $regex: regexPattern } }
+        ]
+      })
+    ]);
+
+    return {
+      total_page: Math.ceil(countUser / limit),
+      page,
+      limit,
+      result
+    };
+  }
+  async approveVerify(userId: string) {
+    return db.users.findOneAndUpdate(
+      {
+        _id: new ObjectId(userId)
+      },
+      {
+        $set: {
+          'verified_info.status': VerifyStatus.Approved
+        }
+      }
+    );
+  }
+  async rejectVerify(userId: string) {
+    return db.users.findOneAndUpdate(
+      {
+        _id: new ObjectId(userId)
+      },
+      {
+        $set: {
+          'verified_info.status': VerifyStatus.Rejected,
+          'verified_info.img_front': '',
+          'verified_info.img_back': '',
+          'verified_info.vid_portrait': ''
+        }
+      }
+    );
   }
 }
 

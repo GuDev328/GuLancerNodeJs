@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { AccountStatus, GenderEnum, RoleType } from '~/constants/enum';
+import { AccountStatus, GenderEnum, RoleType, VerifyStatus } from '~/constants/enum';
 import { DateVi } from '~/utils/date-vi';
 
 interface UserType {
@@ -15,7 +15,6 @@ interface UserType {
   description?: string;
   bio?: string;
   location?: string;
-  website?: string;
   username: string;
   avatar?: string;
   salary?: number;
@@ -24,10 +23,17 @@ interface UserType {
   technologies?: ObjectId[];
   project_done?: number;
   star?: number;
-  verified?: boolean;
   fields?: ObjectId[];
   gender?: GenderEnum;
   status?: AccountStatus;
+  verified_info?: VerifyInfo;
+}
+
+interface VerifyInfo {
+  status: VerifyStatus;
+  img_front: string;
+  img_back: string;
+  vid_portrait: string;
 }
 
 export default class User {
@@ -43,7 +49,6 @@ export default class User {
   description: string;
   bio: string;
   location: string;
-  website: string;
   username: string;
   avatar: string;
   cover_photo: string;
@@ -52,10 +57,11 @@ export default class User {
   technologies: ObjectId[];
   project_done: number;
   star: number;
-  verified: boolean;
   fields: ObjectId[];
   gender: GenderEnum;
   status: AccountStatus;
+  verified_info: VerifyInfo;
+
   constructor(user: UserType) {
     this._id = user._id || new ObjectId();
     this.name = user.name || '';
@@ -71,7 +77,6 @@ export default class User {
     this.description = user.description || '';
     this.bio = user.bio || '';
     this.location = user.location || '';
-    this.website = user.website || '';
     this.username = user.username || '';
     this.avatar =
       user.avatar || user.gender === GenderEnum.Male
@@ -82,8 +87,13 @@ export default class User {
     this.technologies = user.technologies || [];
     this.project_done = 0;
     this.star = 5;
-    this.verified = user.verified || false;
     this.fields = user.fields || [];
     this.status = user.status || AccountStatus.Active;
+    this.verified_info = user.verified_info || {
+      status: VerifyStatus.Unverified,
+      img_front: '',
+      img_back: '',
+      vid_portrait: ''
+    };
   }
 }

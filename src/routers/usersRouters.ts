@@ -5,15 +5,18 @@ import {
   followController,
   forgotPasswordController,
   getListAccount,
+  getListRequestVerifyController,
   getMeController,
   getProfileByIDController,
   getProfileController,
+  handleVerifyController,
   initRoleController,
   loginController,
   loginGoogleController,
   logoutController,
   refreshTokenController,
   registerController,
+  requestVerifyController,
   resetPasswordController,
   unfollowController,
   updateMeController
@@ -85,5 +88,9 @@ router.get('/profile/:id', catchError(getProfileByIDController));
 
 router.post('/list', accessTokenValidator, catchError(getListAccount));
 router.post('/delete', accessTokenValidator, isAdminValidator, catchError(deleteAccountController));
+router.post('/request-verify', accessTokenValidator, catchError(requestVerifyController));
+
+router.post('/list-request-verify', accessTokenValidator, isAdminValidator, catchError(getListRequestVerifyController));
+router.post('/handle-verify', accessTokenValidator, isAdminValidator, catchError(handleVerifyController));
 
 export default router;

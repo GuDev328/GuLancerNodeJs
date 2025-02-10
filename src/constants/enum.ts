@@ -19,6 +19,13 @@ export enum MediaType {
   VideoHLS
 }
 
+export enum VerifyStatus {
+  Unverified,
+  Pending,
+  Approved,
+  Rejected
+}
+
 export enum AccountSortBy {
   None,
   Star,

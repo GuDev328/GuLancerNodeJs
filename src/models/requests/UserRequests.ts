@@ -97,6 +97,18 @@ export interface GetListRequest {
   sortBy: AccountSortBy;
 }
 
+export interface HandleVerifyRequest {
+  type: 'APPROVE' | 'REJECT';
+  userId: string;
+}
+
+export interface RequestVerifyRequest {
+  decodeAuthorization: JwtPayload;
+  img_front: string;
+  img_back: string;
+  vid_portrait: string;
+}
+
 export interface AddUsersToCircleRequest {
   decodeAuthorization: JwtPayload;
   userIds: string[];
