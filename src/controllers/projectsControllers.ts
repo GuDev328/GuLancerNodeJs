@@ -1,11 +1,15 @@
 import { Request, Response } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ObjectId } from 'mongodb';
+import { StatusProject } from '~/constants/enum';
+import { httpStatus } from '~/constants/httpStatus';
+import { ErrorWithStatus } from '~/models/Errors';
 import {
   AcceptApplyInviteRequest,
   ApplyInviteRequest,
   BookmarkRequest,
   CreateProjectRequest,
+  EditMyProgressRequest,
   GetAllProjectRequest,
   GetApplyInviteRequest,
   GetMyProjectsRequest
@@ -185,5 +189,91 @@ export const getMarketController = async (req: Request<ParamsDictionary, any, an
   res.status(200).json({
     result,
     message: 'Get Market suscess'
+  });
+};
+
+export const getMyProgressController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { project_id } = req.params;
+  console.log(project_id, req.body.decodeAuthorization.payload.userId);
+  const result = await db.memberProject
+    .aggregate([
+      {
+        $match: {
+          project_id: new ObjectId(project_id),
+          user_id: new ObjectId(req.body.decodeAuthorization.payload.userId)
+        }
+      },
+      {
+        $lookup: {
+          from: 'Users',
+          localField: 'user_id',
+          foreignField: '_id',
+          as: 'user_info'
+        }
+      },
+      {
+        $lookup: {
+          from: 'Projects',
+          localField: 'project_id',
+          foreignField: '_id',
+          as: 'project_info'
+        }
+      },
+      {
+        $project: {
+          'user_info.password': 0,
+          'user_info.forgot_password_token': 0,
+          'user_info.verified_info.img_font': 0,
+          'user_info.verified_info.img_back': 0,
+          'user_info.verified_info.vid_portrait': 0
+        }
+      }
+    ])
+    .toArray();
+  console.log(result);
+  res.status(200).json({
+    result,
+    message: 'Get Market suscess'
+  });
+};
+
+export const EditMyProgressController = async (
+  req: Request<ParamsDictionary, any, EditMyProgressRequest>,
+  res: Response
+) => {
+  const project = await db.projects.findOne({ _id: new ObjectId(req.body.project_id) });
+  if (!project)
+    throw new ErrorWithStatus({
+      message: 'Không tìm thấy dự án',
+      status: httpStatus.NOT_FOUND
+    });
+  if (project.status !== StatusProject.Recruiting) {
+    throw new ErrorWithStatus({
+      message: 'Chỉ có thể thay đổi khi dự án ở giai đoạn tuyển dụng nhân sự',
+      status: httpStatus.BAD_REQUEST
+    });
+  }
+  const memberProject = await db.memberProject.findOne({
+    project_id: new ObjectId(req.body.project_id),
+    user_id: new ObjectId(req.body.decodeAuthorization.payload.userId)
+  });
+  if (!memberProject)
+    throw new ErrorWithStatus({
+      message: 'Bạn không phải thành viên của dự án',
+      status: httpStatus.FORBIDDEN
+    });
+  const result = await projectsService.editMyProgress(req.body);
+  res.status(200).json({
+    result,
+    message: 'Edit Progress suscess'
+  });
+};
+
+export const getOverviewProgress = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { project_id } = req.params;
+  const result = await projectsService.getOverViewProgress(new ObjectId(project_id));
+  res.status(200).json({
+    result,
+    message: 'Get suscess'
   });
 };

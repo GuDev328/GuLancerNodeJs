@@ -5,6 +5,7 @@ import {
   ApplyInviteRequest,
   BookmarkRequest,
   CreateProjectRequest,
+  EditMyProgressRequest,
   GetAllProjectRequest,
   GetApplyInviteRequest,
   GetMyProjectsRequest
@@ -420,7 +421,6 @@ class ProjectsService {
     const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
     const projectAsMember = await db.memberProject.find({ user_id }).toArray();
     const projectIdAsMember = projectAsMember.map((item) => item.project_id);
-    console.log(projectIdAsMember);
 
     const [projects, total] = await Promise.all([
       db.projects
@@ -622,6 +622,99 @@ class ProjectsService {
       projectResult,
       techResult,
       fieldResult
+    };
+  }
+
+  async editMyProgress(payload: EditMyProgressRequest) {
+    const formatMilestoneInfo = payload.milestone_info.map((item) => ({
+      ...item,
+      day_to_done: new Date(item.day_to_done),
+      day_to_payment: undefined,
+      status: 'NOT_READY' as 'NOT_READY' | 'PROCESSING' | 'PAYING' | 'COMPLETE' | 'DISPUTED'
+    }));
+    const result = await db.memberProject.findOneAndUpdate(
+      {
+        user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
+        project_id: new ObjectId(payload.project_id)
+      },
+      {
+        $set: {
+          salary: payload.salary,
+          number_of_milestone: payload.number_of_milestone,
+          milestone_info: formatMilestoneInfo,
+          date_to_complete: new Date(payload.date_to_complete)
+        }
+      }
+    );
+    return result;
+  }
+
+  async getOverViewProgress(project_id: ObjectId) {
+    const membersProject = await db.memberProject
+      .aggregate<MemberProject>([
+        {
+          $match: {
+            project_id
+          }
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'user_id',
+            foreignField: '_id',
+            as: 'user_info'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Projects',
+            localField: 'project_id',
+            foreignField: '_id',
+            as: 'project_info'
+          }
+        },
+        {
+          $project: {
+            'user_info.password': 0,
+            'user_info.forgot_password_token': 0,
+            'user_info.verified_info.img_font': 0,
+            'user_info.verified_info.img_back': 0,
+            'user_info.verified_info.vid_portrait': 0
+          }
+        }
+      ])
+      .toArray();
+
+    let totalEscrowing = 0;
+    let totalAmountToBePaid = 0;
+    let amountPaid = 0;
+    const progressMember: any = [];
+    membersProject.forEach((item, index) => {
+      totalEscrowing += item.escrowed;
+      totalAmountToBePaid += item.salary;
+      const totalPaid = item.milestone_info.reduce((sum, itemC) => {
+        if (itemC.status === 'COMPLETE') return sum + itemC.salary;
+        else return sum;
+      }, 0);
+      amountPaid += totalPaid;
+      const phaseCompleteReverse = item.milestone_info
+        .slice()
+        .reverse()
+        .findIndex((itemC) => itemC.status === 'COMPLETE');
+      const lastPhaseComplete =
+        phaseCompleteReverse !== -1 ? item.milestone_info.length - 1 - phaseCompleteReverse : -1;
+
+      progressMember.push({
+        ...item,
+        totalPaid,
+        currentPhase: item.milestone_info[lastPhaseComplete + 1]
+      });
+    });
+    return {
+      totalEscrowing,
+      totalAmountToBePaid,
+      amountPaid,
+      progressMember
     };
   }
 }

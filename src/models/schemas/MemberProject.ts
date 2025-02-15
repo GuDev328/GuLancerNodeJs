@@ -14,6 +14,7 @@ interface MemberProjectType {
   user_id: ObjectId;
   project_id: ObjectId;
   salary: number;
+  escrowed?: number;
   number_of_milestone?: number; //Số lần trả tiền
   milestone_info?: MilestoneInfoType[];
   date_to_complete?: Date;
@@ -25,6 +26,7 @@ export default class MemberProject {
   user_id: ObjectId;
   project_id: ObjectId;
   salary: number;
+  escrowed: number;
   number_of_milestone: number; //Số lần trả tiền
   milestone_info: MilestoneInfoType[];
   date_to_complete: Date;
@@ -35,6 +37,7 @@ export default class MemberProject {
     this.user_id = member.user_id;
     this.project_id = member.project_id;
     this.salary = member.salary || 0;
+    this.escrowed = 0;
     this.number_of_milestone = member.number_of_milestone || 1;
     this.milestone_info = member.milestone_info || [
       {

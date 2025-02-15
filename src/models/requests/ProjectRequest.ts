@@ -14,6 +14,19 @@ export interface BookmarkRequest {
   project_id: string;
 }
 
+export interface EditMyProgressRequest {
+  decodeAuthorization: JwtPayload;
+  project_id: string;
+  salary: number;
+  date_to_complete: string;
+  number_of_milestone: number;
+  milestone_info: {
+    no: number;
+    day_to_done: string;
+    salary: number;
+  }[];
+}
+
 export interface CreateProjectRequest {
   decodeAuthorization: JwtPayload;
   title: string;

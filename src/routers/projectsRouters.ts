@@ -4,12 +4,15 @@ import {
   applyInviteController,
   bookmarkController,
   createProjectController,
+  EditMyProgressController,
   getAllProjectsController,
   getApplyInviteController,
   getDetailProjectController,
   getMarketController,
   getMemberController,
+  getMyProgressController,
   getMyProjectsController,
+  getOverviewProgress,
   rejectApplyInviteController,
   unbookmarkController
 } from '~/controllers/projectsControllers';
@@ -33,7 +36,14 @@ router.get('/get-member/:id', accessTokenValidator, catchError(getMemberControll
 router.post('/bookmark', accessTokenValidator, bookmarkValidator, catchError(bookmarkController));
 router.post('/unbookmark', accessTokenValidator, bookmarkValidator, catchError(unbookmarkController));
 router.post('/get-my-projects', accessTokenValidator, catchError(getMyProjectsController));
-
+router.get('/my-progress/:project_id', accessTokenValidator, catchError(getMyProgressController));
+router.post('/edit-my-progress', accessTokenValidator, catchError(EditMyProgressController));
+router.get(
+  '/overview-progress/:project_id',
+  accessTokenValidator,
+  isAdminProjectValidator,
+  catchError(getOverviewProgress)
+);
 router.get('/get-market', catchError(getMarketController));
 
 export default router;
