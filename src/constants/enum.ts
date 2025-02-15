@@ -68,17 +68,13 @@ export enum StatusProject {
   Processing,
   Pause,
   Paying,
-  Complete
+  Complete,
+  Disputed
 }
 
 export enum TypeProject {
   Project,
   PerHour
-}
-
-export enum IssuesStatus {
-  Processing,
-  Processed
 }
 
 export enum TaskStatus {

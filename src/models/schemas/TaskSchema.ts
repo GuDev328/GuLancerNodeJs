@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { IssuesStatus, TaskStatus } from '~/constants/enum';
+import { TaskStatus } from '~/constants/enum';
 import { DateVi } from '~/utils/date-vi';
 
 interface TaskType {

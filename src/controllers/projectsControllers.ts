@@ -109,45 +109,35 @@ export const acceptApplyInviteController = async (
 
 export const getMemberController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const projectId = req.params.id;
-  const result = await db.projects
+  const result = await db.memberProject
     .aggregate([
       {
         $match: {
-          _id: new ObjectId(projectId)
+          project_id: new ObjectId(projectId)
         }
       },
       {
         $lookup: {
           from: 'Users',
-          localField: 'members._id',
+          localField: 'user_id',
           foreignField: '_id',
-          as: 'member_info'
+          as: 'user_info'
         }
       },
       {
         $project: {
-          members: 1,
-          member_info: {
-            $map: {
-              input: '$member_info',
-              as: 'member',
-              in: {
-                _id: '$$member._id',
-                name: '$$member.name',
-                avatar: '$$member.avatar',
-                star: '$$member.star',
-                project_done: '$$member.project_done',
-                verified: '$$member.verified',
-                role: '$members.role'
-              }
-            }
-          }
+          'user_info.password': 0,
+          'user_info.forgot_password_token': 0,
+          'user_info.verified_info.img_font': 0,
+          'user_info.verified_info.img_back': 0,
+          'user_info.verified_info.vid_portrait': 0
         }
       }
     ])
     .toArray();
+
   res.status(200).json({
-    result: result[0].member_info,
+    result: result.map((item) => item.user_info[0]),
     message: 'Lấy danh sách thành công'
   });
 };

@@ -8,16 +8,15 @@ import Tweet from '~/models/schemas/TweetSchema';
 import Conversation from '~/models/schemas/ConversationSchema';
 import { env } from '~/constants/config';
 import ApplyInvitation from '~/models/schemas/ApplyInvitation';
-import Discussion from '~/models/schemas/DiscussionSchema';
 import Evaluation from '~/models/schemas/EvaluationSchema';
 import Group from '~/models/schemas/GroupSchema';
-import Issue from '~/models/schemas/IssueSchema';
 import Member from '~/models/schemas/MemberSchema';
 import Project from '~/models/schemas/ProjectSchema';
 import Technology from '~/models/schemas/TechnologySchema';
 import Field from '~/models/schemas/FieldSchema';
 import UserConversation from '~/models/schemas/UserConversation';
 import Task from '~/models/schemas/TaskSchema';
+import MemberProject from '~/models/schemas/MemberProject';
 const uri = env.mongodbURI;
 
 class DatabaseServices {
@@ -83,8 +82,8 @@ class DatabaseServices {
   get applyInvitations(): Collection<ApplyInvitation> {
     return this.db.collection('ApplyInvitations');
   }
-  get discussions(): Collection<Discussion> {
-    return this.db.collection('Discussions');
+  get memberProject(): Collection<MemberProject> {
+    return this.db.collection('MemberProject');
   }
   get evaluations(): Collection<Evaluation> {
     return this.db.collection('Evaluations');
@@ -94,9 +93,6 @@ class DatabaseServices {
   }
   get members(): Collection<Member> {
     return this.db.collection('Members');
-  }
-  get issues(): Collection<Issue> {
-    return this.db.collection('Issues');
   }
   get projects(): Collection<Project> {
     return this.db.collection('Projects');

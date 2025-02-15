@@ -17,6 +17,7 @@ import { InvitationType, ProjectOrderBy, RoleMemberProject, StatusProject } from
 import Field from '~/models/schemas/FieldSchema';
 import Technology from '~/models/schemas/TechnologySchema';
 import ApplyInvitation from '~/models/schemas/ApplyInvitation';
+import MemberProject from '~/models/schemas/MemberProject';
 
 class ProjectsService {
   constructor() {}
@@ -49,8 +50,6 @@ class ProjectsService {
       title: payload.title,
       status: StatusProject.NotReady,
       admin_id: user_id,
-      max_member: 1,
-      members: [],
       salary: Number(payload.salary),
       salaryType: payload.salaryType,
       description: payload.description,
@@ -138,14 +137,6 @@ class ProjectsService {
           localField: 'technologies',
           foreignField: '_id',
           as: 'technologies_info'
-        }
-      },
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'members_id',
-          foreignField: '_id',
-          as: 'members_info'
         }
       },
 
@@ -301,7 +292,16 @@ class ProjectsService {
           : payload.technologies?.length
             ? queryHasTech
             : queryNoTechField;
-    const result = await db.projects.aggregate(query).toArray();
+    const result = await db.projects
+      .aggregate([
+        {
+          $match: {
+            status: StatusProject.Recruiting
+          }
+        },
+        ...query
+      ])
+      .toArray();
 
     const response = {
       page: result[0]?.page || 1,
@@ -326,16 +326,17 @@ class ProjectsService {
         status: httpStatus.BAD_REQUEST
       });
     }
-
-    project.members.map((member) => {
-      if (member._id.equals(user_id)) {
-        throw new ErrorWithStatus({
-          message: 'Bạn đã là thành viên của dự án này',
-          code: 'ALREADY_MEMBER',
-          status: httpStatus.BAD_REQUEST
-        });
-      }
+    const checkIsMember = await db.memberProject.findOne({
+      user_id: new ObjectId(user_id),
+      project_id: new ObjectId(project_id)
     });
+    if (checkIsMember) {
+      throw new ErrorWithStatus({
+        message: 'Bạn đã là thành viên của dự án này',
+        code: 'ALREADY_MEMBER',
+        status: httpStatus.BAD_REQUEST
+      });
+    }
 
     const findInDb = await db.applyInvitations.findOne({
       user_id,
@@ -402,19 +403,14 @@ class ProjectsService {
       }
     }
 
-    await db.projects.updateOne(
-      {
-        _id: applyInvite.project_id
-      },
-      {
-        $push: {
-          members: {
-            _id: applyInvite.user_id,
-            role: RoleMemberProject.Member
-          }
-        }
-      }
+    await db.memberProject.insertOne(
+      new MemberProject({
+        user_id: applyInvite.user_id,
+        project_id: applyInvite.project_id,
+        salary: applyInvite.salary
+      })
     );
+
     await db.applyInvitations.deleteOne({
       _id: apply_invite_id
     });
@@ -422,12 +418,19 @@ class ProjectsService {
 
   async getMyProjects(page: number, limit: number, payload: GetMyProjectsRequest) {
     const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
+    const projectAsMember = await db.memberProject.find({ user_id }).toArray();
+    const projectIdAsMember = projectAsMember.map((item) => item.project_id);
+    console.log(projectIdAsMember);
+
     const [projects, total] = await Promise.all([
       db.projects
         .aggregate([
           {
             $match: {
-              $and: [{ $or: [{ admin_id: user_id }, { 'members._id': user_id }] }, { status: payload.type }]
+              $and: [
+                { $or: [{ admin_id: user_id }, { _id: { $in: projectIdAsMember } }] },
+                ...[payload.type !== undefined ? { status: payload.type } : {}]
+              ]
             }
           },
           {
@@ -446,10 +449,15 @@ class ProjectsService {
           }
         ])
         .toArray(),
+
       db.projects.countDocuments({
-        $and: [{ $or: [{ admin_id: user_id }, { 'members._id': user_id }] }, { status: payload.type }]
+        $and: [
+          { $or: [{ admin_id: user_id }, { _id: { $in: projectIdAsMember } }] },
+          ...[payload.type !== undefined ? { status: payload.type } : {}]
+        ]
       })
     ]);
+
     const response = {
       page: page,
       limit: limit,
@@ -530,9 +538,9 @@ class ProjectsService {
   async getMarket() {
     const result = await db.projects
       .aggregate([
-        // {
-        //   $match: { status: StatusProject.Recruiting }
-        // },
+        {
+          $match: { status: StatusProject.Recruiting }
+        },
         {
           $lookup: {
             from: 'Technologies',
@@ -551,10 +559,10 @@ class ProjectsService {
         }
       ])
       .toArray();
-
+    const projectNewToday = await db.projects.find({ created_at: new Date() }).toArray();
     const projectResult = {
       total: result.length,
-      today: result.filter((project) => project.created_at.getDate() === new Date().getDate()).length
+      today: projectNewToday.length
     };
 
     interface Item {
