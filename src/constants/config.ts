@@ -40,5 +40,7 @@ export const env = {
   vnp_TMNCode: process.env.VNP_TMNCODE as string,
   vnp_HashSecret: process.env.VNP_HASHSECRET as string,
   vnp_Url: process.env.VNP_URL as string,
-  vnp_returnUrl: process.env.VNP_RETURNURL as string
+  vnp_returnUrl: process.env.VNP_RETURNURL as string,
+
+  feBillingURL: process.env.FE_BILLING_URL as string
 };

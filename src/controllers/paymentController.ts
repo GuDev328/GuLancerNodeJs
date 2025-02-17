@@ -9,6 +9,7 @@ import { env } from '~/constants/config';
 import crypto from 'crypto';
 import querystring from 'querystring';
 import moment from 'moment';
+import userService from '~/services/usersServices';
 function sortParams(obj: any) {
   const sortedObj = Object.entries(obj)
     .filter(([key, value]) => value !== '' && value !== undefined && value !== null)
@@ -66,15 +67,12 @@ export const createPaymentController = async (req: Request<ParamsDictionary, any
     vnp_CreateDate: createDate,
     vnp_ExpireDate: expireDate
   };
-  console.log('Raw', vnp_Params);
   const sortedParams = sortParams(vnp_Params);
-  console.log('sorted', sortedParams);
   const urlParams = new URLSearchParams();
   for (const [key, value] of Object.entries(sortedParams)) {
     urlParams.append(key, value as string);
   }
   const querystring = urlParams.toString();
-  console.log('urlToSign', querystring);
 
   const hmac = crypto.createHmac('sha512', secretKey);
   const signed = hmac.update(querystring).digest('hex');
@@ -83,8 +81,55 @@ export const createPaymentController = async (req: Request<ParamsDictionary, any
 
   const paymentUrl = `${vnpUrl}?${urlParams.toString()}`;
 
-  res.json({
-    success: true,
-    paymentUrl: paymentUrl
+  res.status(200).json({
+    message: 'Tạo đơn yêu cầu nạp tiền thành công',
+    result: paymentUrl
+  });
+};
+
+export const vnPayPaymentReturnController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { vnp_ResponseCode, vnp_TxnRef, vnp_TransactionNo, vnp_CardType, vnp_PayDate } = req.query;
+  if (!vnp_ResponseCode || !vnp_TxnRef) {
+    return res.status(400).json({
+      success: false,
+      message: 'All fields are required'
+    });
+  }
+  const order = await db.payments.findOneAndUpdate(
+    {
+      _id: new ObjectId(vnp_TxnRef.toString())
+    },
+    {
+      $set: {
+        paymentMethod: vnp_CardType?.toString(),
+        vnp_TransactionNo: vnp_TransactionNo?.toString(),
+        vnp_ResponseCode: vnp_ResponseCode?.toString(),
+        vnp_PayDate: moment(vnp_PayDate?.toString(), 'YYYYMMDDHHmmss').toDate(),
+        status: vnp_ResponseCode !== '00' ? (vnp_ResponseCode !== '24' ? 'FAILED' : 'CANCELED') : 'SUCCESS'
+      }
+    }
+  );
+  if (!order) {
+    return res.status(401).json({
+      success: false,
+      message: 'OrderId not found'
+    });
+  }
+  let redirectUrl = '';
+  if (vnp_ResponseCode !== '00') {
+    redirectUrl = `${env.feBillingURL}?status=fail`;
+  } else {
+    redirectUrl = `${env.feBillingURL}?status=success`;
+  }
+  res.redirect(redirectUrl);
+};
+
+export const getPaymentOrderController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { page, limit } = req.query;
+  const user_id = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const result = await userService.getPaymentOrders(Number(page), Number(limit), user_id);
+  res.status(200).json({
+    result,
+    message: 'Lấy thông tin thành công'
   });
 };

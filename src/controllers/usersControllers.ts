@@ -25,6 +25,8 @@ import {
   VerifyEmailRequest
 } from '~/models/requests/UserRequests';
 import userService from '~/services/usersServices';
+import { DecodeAuthorization } from '~/models/requests/GroupRequest';
+import { ObjectId } from 'mongodb';
 
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequest>, res: Response) => {
   const result = await userService.login(req.body);
@@ -243,5 +245,13 @@ export const handleVerifyController = async (
   }
   res.status(200).json({
     message: 'Xử lý xác thực thành công'
+  });
+};
+
+export const getAmountInfoController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const result = await userService.amountInfo(new ObjectId(req.body.decodeAuthorization.payload.userId));
+  res.status(200).json({
+    result,
+    message: 'Lấy thông tin thành công'
   });
 };

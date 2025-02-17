@@ -699,6 +699,43 @@ class UsersService {
       }
     );
   }
+
+  async amountInfo(user_id: ObjectId) {
+    const user = await db.users.findOne({ _id: user_id });
+    if (!user)
+      throw new ErrorWithStatus({
+        message: 'Không tìm thấy dữ liệu của người dùng này.',
+        status: httpStatus.NOT_FOUND
+      });
+    if (user.role === RoleType.Employer) {
+      const project_ids = (await db.projects.find({ admin_id: user_id }).toArray()).map((item) => item._id);
+      const member_project = await db.memberProject.find({ project_id: { $in: project_ids } }).toArray();
+      const escrowing = member_project.reduce((sum, item) => sum + item.escrowed, 0);
+      return {
+        amount: user.amount,
+        escrowing
+      };
+    } else {
+      return {
+        amount: user.amount,
+        escrowing: null
+      };
+    }
+  }
+
+  async getPaymentOrders(page: number, limit: number, user_id: ObjectId) {
+    const skip = (page - 1) * limit;
+    const orders = await db.payments.find({ user_id }).skip(skip).limit(limit).toArray();
+    const total_record = await db.payments.countDocuments({ user_id });
+    const total_page = Math.ceil(total_record / limit);
+    return {
+      page,
+      limit,
+      total_record,
+      total_page,
+      orders
+    };
+  }
 }
 
 const usersService = new UsersService();
