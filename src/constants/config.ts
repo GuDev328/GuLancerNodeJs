@@ -35,5 +35,10 @@ export const env = {
   titlePassword: process.env.TITLE_PASWORD as string,
   subjectEmailForgotPassword: process.env.SUBJECT_EMAIL_FORGOT_PASSWORD as string,
   titleEmailForgotPassword: process.env.TITLE_EMAIL_FORGOT_PASSWORD as string,
-  contentEmailForgotPassword: process.env.CONTENT_EMAIL_FORGOT_PASSWORD as string
+  contentEmailForgotPassword: process.env.CONTENT_EMAIL_FORGOT_PASSWORD as string,
+
+  vnp_TMNCode: process.env.VNP_TMNCODE as string,
+  vnp_HashSecret: process.env.VNP_HASHSECRET as string,
+  vnp_Url: process.env.VNP_URL as string,
+  vnp_returnUrl: process.env.VNP_RETURNURL as string
 };

@@ -10,6 +10,7 @@ import conversationsRouters from '~/routers/conversationsRouters';
 import fieldRouters from '~/routers/fieldsRouters';
 import technologyRouters from '~/routers/technologyRouters';
 import groupsRouters from '~/routers/groupsRouters';
+import paymentsRouters from '~/routers/paymentsRouters';
 import db from './services/databaseServices';
 import { defaultsErrorHandler } from './middlewares/errorsMiddlewares';
 import cors, { CorsOptions } from 'cors';
@@ -44,6 +45,7 @@ app.use('/groups', groupsRouters);
 app.use('/technology', technologyRouters);
 app.use('/fields', fieldRouters);
 app.use('/tasks', tasksRouters);
+app.use('/payments', paymentsRouters);
 app.use(defaultsErrorHandler);
 
 const port = env.port || 3030;

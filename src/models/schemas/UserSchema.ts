@@ -14,6 +14,7 @@ interface UserType {
   forgot_password_token?: string;
   description?: string;
   bio?: string;
+  amount?: number;
   location?: string;
   username: string;
   avatar?: string;
@@ -51,6 +52,7 @@ export default class User {
   location: string;
   username: string;
   avatar: string;
+  amount: number;
   cover_photo: string;
   salary: number;
   role: RoleType;
@@ -71,6 +73,7 @@ export default class User {
     this.password = user.password || '';
     this.created_at = DateVi();
     this.updated_at = DateVi();
+    this.amount = 0;
     this.gender = user.gender || GenderEnum.Male;
     this.salary = user.salary || 0;
     this.forgot_password_token = user.forgot_password_token || '';
