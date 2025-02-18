@@ -736,6 +736,20 @@ class UsersService {
       orders
     };
   }
+
+  async getHistoryAmount(page: number, limit: number, user_id: ObjectId) {
+    const skip = (page - 1) * limit;
+    const orders = await db.historyAmounts.find({ user_id }).sort({ created_at: -1 }).skip(skip).limit(limit).toArray();
+    const totalRecord = await db.historyAmounts.countDocuments({ user_id });
+    const totalPage = Math.ceil(totalRecord / limit);
+    return {
+      page,
+      limit,
+      totalRecord,
+      totalPage,
+      orders
+    };
+  }
 }
 
 const usersService = new UsersService();

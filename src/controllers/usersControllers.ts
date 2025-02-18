@@ -255,3 +255,13 @@ export const getAmountInfoController = async (req: Request<ParamsDictionary, any
     message: 'Lấy thông tin thành công'
   });
 };
+
+export const getAmountHistoryController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { page, limit } = req.query;
+  const user_id = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const result = await userService.getHistoryAmount(Number(page), Number(limit), user_id);
+  res.status(200).json({
+    result,
+    message: 'Lấy biến động số dư thành công'
+  });
+};

@@ -10,6 +10,8 @@ import crypto from 'crypto';
 import querystring from 'querystring';
 import moment from 'moment';
 import userService from '~/services/usersServices';
+import HistoryAmount from '~/models/schemas/HistoryAmountSchema';
+import { HistoryAmountTypeEnum } from '~/constants/enum';
 function sortParams(obj: any) {
   const sortedObj = Object.entries(obj)
     .filter(([key, value]) => value !== '' && value !== undefined && value !== null)
@@ -118,6 +120,13 @@ export const vnPayPaymentReturnController = async (req: Request<ParamsDictionary
   } else {
     if (vnp_ResponseCode === '00') {
       await db.users.findOneAndUpdate({ _id: order.user_id }, { $inc: { amount: Number(order.amount) } });
+      await db.historyAmounts.insertOne(
+        new HistoryAmount({
+          user_id: order.user_id,
+          amount: Number(order.amount),
+          type: HistoryAmountTypeEnum.DEPOSIT
+        })
+      );
     }
   }
   let redirectUrl = '';

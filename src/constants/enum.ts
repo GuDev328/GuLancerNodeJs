@@ -72,6 +72,14 @@ export enum StatusProject {
   Disputed
 }
 
+export enum HistoryAmountTypeEnum {
+  DEPOSIT,
+  FROM_PROJECT,
+
+  WITHDRAW,
+  TO_PROJECT
+}
+
 export enum TypeProject {
   Project,
   PerHour

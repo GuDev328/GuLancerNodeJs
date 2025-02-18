@@ -4,6 +4,7 @@ import {
   deleteAccountController,
   followController,
   forgotPasswordController,
+  getAmountHistoryController,
   getAmountInfoController,
   getListAccount,
   getListRequestVerifyController,
@@ -95,5 +96,6 @@ router.post('/list-request-verify', accessTokenValidator, isAdminValidator, catc
 router.post('/handle-verify', accessTokenValidator, isAdminValidator, catchError(handleVerifyController));
 
 router.get('/amount-info', accessTokenValidator, catchError(getAmountInfoController));
+router.get('/amount-history', accessTokenValidator, catchError(getAmountHistoryController));
 
 export default router;
