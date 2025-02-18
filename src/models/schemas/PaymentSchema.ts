@@ -8,6 +8,7 @@ interface PaymentType {
   paymentMethod?: string;
   vnp_TransactionNo?: string;
   vnp_ResponseCode?: string;
+  payment_url: string;
   vnp_PayDate?: Date;
   status?: 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELED';
   created_at?: Date;
@@ -22,6 +23,7 @@ export default class Payment {
   vnp_TransactionNo: string;
   vnp_ResponseCode: string;
   vnp_PayDate: Date | undefined;
+  payment_url: string;
   status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELED';
   created_at: Date;
   updatedAt: Date;
@@ -31,6 +33,7 @@ export default class Payment {
     this.user_id = payment.user_id;
     this.amount = payment.amount;
     this.paymentMethod = payment.paymentMethod || '';
+    this.payment_url = payment.payment_url;
     this.vnp_TransactionNo = payment.vnp_TransactionNo || '';
     this.vnp_ResponseCode = payment.vnp_ResponseCode || '';
     this.vnp_PayDate = payment.vnp_PayDate || undefined;

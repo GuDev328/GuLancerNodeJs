@@ -725,14 +725,14 @@ class UsersService {
 
   async getPaymentOrders(page: number, limit: number, user_id: ObjectId) {
     const skip = (page - 1) * limit;
-    const orders = await db.payments.find({ user_id }).skip(skip).limit(limit).toArray();
-    const total_record = await db.payments.countDocuments({ user_id });
-    const total_page = Math.ceil(total_record / limit);
+    const orders = await db.payments.find({ user_id }).sort({ created_at: -1 }).skip(skip).limit(limit).toArray();
+    const totalRecord = await db.payments.countDocuments({ user_id });
+    const totalPage = Math.ceil(totalRecord / limit);
     return {
       page,
       limit,
-      total_record,
-      total_page,
+      totalRecord,
+      totalPage,
       orders
     };
   }

@@ -31,14 +31,8 @@ export const createPaymentController = async (req: Request<ParamsDictionary, any
       status: httpStatus.BAD_REQUEST,
       message: 'Số tiền không hợp lệ !'
     });
-  const newPayment = await db.payments.insertOne(
-    new Payment({
-      user_id: new ObjectId(user_id),
-      amount: amount as number
-    })
-  );
 
-  const orderId = newPayment.insertedId;
+  const orderId = new ObjectId();
 
   const date = new Date();
   const createDate = moment(date).format('YYYYMMDDHHmmss');
@@ -80,7 +74,14 @@ export const createPaymentController = async (req: Request<ParamsDictionary, any
   urlParams.append('vnp_SecureHash', signed);
 
   const paymentUrl = `${vnpUrl}?${urlParams.toString()}`;
-
+  const newPayment = await db.payments.insertOne(
+    new Payment({
+      _id: orderId,
+      payment_url: paymentUrl,
+      user_id: new ObjectId(user_id),
+      amount: amount as number
+    })
+  );
   res.status(200).json({
     message: 'Tạo đơn yêu cầu nạp tiền thành công',
     result: paymentUrl
@@ -104,7 +105,7 @@ export const vnPayPaymentReturnController = async (req: Request<ParamsDictionary
         paymentMethod: vnp_CardType?.toString(),
         vnp_TransactionNo: vnp_TransactionNo?.toString(),
         vnp_ResponseCode: vnp_ResponseCode?.toString(),
-        vnp_PayDate: moment(vnp_PayDate?.toString(), 'YYYYMMDDHHmmss').toDate(),
+        vnp_PayDate: moment(vnp_PayDate?.toString(), 'YYYYMMDDHHmmss').add(7, 'hours').toDate(),
         status: vnp_ResponseCode !== '00' ? (vnp_ResponseCode !== '24' ? 'FAILED' : 'CANCELED') : 'SUCCESS'
       }
     }
@@ -114,6 +115,10 @@ export const vnPayPaymentReturnController = async (req: Request<ParamsDictionary
       success: false,
       message: 'OrderId not found'
     });
+  } else {
+    if (vnp_ResponseCode === '00') {
+      await db.users.findOneAndUpdate({ _id: order.user_id }, { $inc: { amount: Number(order.amount) } });
+    }
   }
   let redirectUrl = '';
   if (vnp_ResponseCode !== '00') {
