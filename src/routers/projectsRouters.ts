@@ -5,6 +5,7 @@ import {
   bookmarkController,
   createProjectController,
   EditMyProgressController,
+  escrowController,
   getAllProjectsController,
   getApplyInviteController,
   getDetailProjectController,
@@ -13,7 +14,10 @@ import {
   getMyProgressController,
   getMyProjectsController,
   getOverviewProgress,
+  memberStartPhaseController,
   rejectApplyInviteController,
+  toProcessingController,
+  toRecruitingController,
   unbookmarkController
 } from '~/controllers/projectsControllers';
 import {
@@ -44,6 +48,18 @@ router.get(
   isAdminProjectValidator,
   catchError(getOverviewProgress)
 );
+
+router.post('/escrow', accessTokenValidator, isAdminProjectValidator, catchError(escrowController));
 router.get('/get-market', catchError(getMarketController));
+
+router.post('/to-recruiting', accessTokenValidator, isAdminProjectValidator, catchError(toRecruitingController));
+router.post(
+  '/recruiting-to-processing',
+  accessTokenValidator,
+  isAdminProjectValidator,
+  catchError(toProcessingController)
+);
+
+router.post('/member-start-phase', accessTokenValidator, catchError(memberStartPhaseController));
 
 export default router;

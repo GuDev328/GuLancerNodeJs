@@ -27,6 +27,13 @@ export interface EditMyProgressRequest {
   }[];
 }
 
+export interface EscrowRequest {
+  decodeAuthorization: JwtPayload;
+  project_id: string;
+  member_project_id: string;
+  amount: number;
+}
+
 export interface CreateProjectRequest {
   decodeAuthorization: JwtPayload;
   title: string;
@@ -35,6 +42,8 @@ export interface CreateProjectRequest {
   salaryType: SalaryType;
   salary: number;
   description: string;
+  endDate: Date;
+  startDate: Date;
 }
 
 export interface GetAllProjectRequest {

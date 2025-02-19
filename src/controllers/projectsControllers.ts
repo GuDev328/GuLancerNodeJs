@@ -10,6 +10,7 @@ import {
   BookmarkRequest,
   CreateProjectRequest,
   EditMyProgressRequest,
+  EscrowRequest,
   GetAllProjectRequest,
   GetApplyInviteRequest,
   GetMyProjectsRequest
@@ -194,8 +195,7 @@ export const getMarketController = async (req: Request<ParamsDictionary, any, an
 
 export const getMyProgressController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { project_id } = req.params;
-  console.log(project_id, req.body.decodeAuthorization.payload.userId);
-  const result = await db.memberProject
+  const membersProject = await db.memberProject
     .aggregate([
       {
         $match: {
@@ -230,9 +230,17 @@ export const getMyProgressController = async (req: Request<ParamsDictionary, any
       }
     ])
     .toArray();
-  console.log(result);
+  const phaseCompleteReverse = membersProject[0].milestone_info
+    .slice()
+    .reverse()
+    .findIndex((itemC: any) => itemC.status === 'COMPLETE');
+  const lastPhaseComplete =
+    phaseCompleteReverse !== -1 ? membersProject[0].milestone_info.length - 1 - phaseCompleteReverse : -1;
   res.status(200).json({
-    result,
+    result: {
+      ...membersProject[0],
+      indexCurrentPhase: lastPhaseComplete + 1
+    },
     message: 'Get Market suscess'
   });
 };
@@ -275,5 +283,104 @@ export const getOverviewProgress = async (req: Request<ParamsDictionary, any, an
   res.status(200).json({
     result,
     message: 'Get suscess'
+  });
+};
+
+export const escrowController = async (req: Request<ParamsDictionary, any, EscrowRequest>, res: Response) => {
+  const result = await projectsService.escrow(req.body);
+  res.status(200).json({
+    result,
+    message: 'Ký quỹ thành công'
+  });
+};
+
+export const toRecruitingController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { project_id, number_people, deadline } = req.body;
+  const result = await db.projects.findOneAndUpdate(
+    { _id: new ObjectId(req.body.project_id) },
+    {
+      $set: {
+        status: StatusProject.Recruiting,
+        recruitmentInfo: {
+          number_people: Number(number_people),
+          deadline: new Date(deadline)
+        }
+      }
+    }
+  );
+
+  res.status(200).json({
+    result,
+    message: 'Thành công'
+  });
+};
+
+export const toProcessingController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const membersProject = await db.memberProject.find({ project_id: new ObjectId(req.body.project_id) }).toArray();
+
+  let isAllMemberNotReady = true;
+  membersProject.forEach((item, index) => {
+    const phaseCompleteReverse = item.milestone_info
+      .slice()
+      .reverse()
+      .findIndex((itemC) => itemC.status === 'COMPLETE');
+    const lastPhaseComplete = phaseCompleteReverse !== -1 ? item.milestone_info.length - 1 - phaseCompleteReverse : -1;
+    const currentPhase = item.milestone_info[lastPhaseComplete + 1];
+    if (currentPhase.status !== 'NOT_READY') isAllMemberNotReady = false;
+  });
+
+  const result = await db.projects.findOneAndUpdate(
+    { _id: new ObjectId(req.body.project_id) },
+    { $set: { status: isAllMemberNotReady ? StatusProject.PendingMemberReady : StatusProject.Processing } }
+  );
+
+  res.status(200).json({
+    result,
+    message: 'Thành công'
+  });
+};
+
+export const memberStartPhaseController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const user_id = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const project_id = new ObjectId(req.body.project_id);
+
+  const project = await db.projects.findOne({ _id: project_id });
+
+  if (!project) throw new ErrorWithStatus({ message: 'Dự án không tồn tại', status: httpStatus.NOT_FOUND });
+
+  if (project?.status === StatusProject.NotReady || project?.status === StatusProject.Recruiting)
+    throw new ErrorWithStatus({ message: 'Dự án chưa bắt đầu', status: httpStatus.BAD_REQUEST });
+
+  const membersProject = await db.memberProject.findOne({ project_id, user_id });
+
+  if (!membersProject)
+    throw new ErrorWithStatus({ message: 'Không tìm thấy thành viên dự án', status: httpStatus.NOT_FOUND });
+  const phaseCompleteReverse = membersProject.milestone_info
+    .slice()
+    .reverse()
+    .findIndex((itemC) => itemC.status === 'COMPLETE');
+  const lastPhaseComplete =
+    phaseCompleteReverse !== -1 ? membersProject.milestone_info.length - 1 - phaseCompleteReverse : -1;
+  const currentPhase = membersProject.milestone_info[lastPhaseComplete + 1];
+  const newMileStoneInfo = membersProject.milestone_info;
+  newMileStoneInfo[lastPhaseComplete + 1] = {
+    ...currentPhase,
+    status: 'PROCESSING'
+  };
+  if (currentPhase.salary > membersProject.escrowed)
+    throw new ErrorWithStatus({
+      message: 'Chủ dự án chưa ký quỹ cho giai đoạn này. Hãy liên hệ với chủ dự án',
+      status: httpStatus.BAD_REQUEST
+    });
+
+  await db.memberProject.findOneAndUpdate(
+    { project_id, user_id },
+    {
+      $set: { milestone_info: newMileStoneInfo }
+    }
+  );
+
+  res.status(200).json({
+    message: 'Thành công'
   });
 };

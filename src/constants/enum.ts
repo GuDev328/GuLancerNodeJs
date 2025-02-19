@@ -66,6 +66,7 @@ export enum StatusProject {
   NotReady,
   Recruiting,
   Processing,
+  PendingMemberReady,
   Pause,
   Paying,
   Complete,

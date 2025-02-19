@@ -6,6 +6,7 @@ import {
   BookmarkRequest,
   CreateProjectRequest,
   EditMyProgressRequest,
+  EscrowRequest,
   GetAllProjectRequest,
   GetApplyInviteRequest,
   GetMyProjectsRequest
@@ -55,7 +56,9 @@ class ProjectsService {
       salaryType: payload.salaryType,
       description: payload.description,
       technologies: techsFinds,
-      fields: fieldsFinds
+      fields: fieldsFinds,
+      end_date: new Date(payload.endDate),
+      start_date: new Date(payload.startDate)
     });
 
     return await db.projects.insertOne(project);
@@ -355,8 +358,8 @@ class ProjectsService {
       project_id,
       type: payload.type,
       content: payload.content,
-      salary: payload.salary,
-      time_to_complete: payload.time_to_complete ? new Date(payload.time_to_complete) : null
+      salary: payload.salary ? payload.salary : project.salary,
+      time_to_complete: payload.time_to_complete ? new Date(payload.time_to_complete) : project.end_date
     });
     return await db.applyInvitations.insertOne(applyInvite);
   }
@@ -716,6 +719,34 @@ class ProjectsService {
       amountPaid,
       progressMember
     };
+  }
+
+  async escrow(payload: EscrowRequest) {
+    const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
+    const user = await db.users.findOne({ _id: user_id });
+    if (!user)
+      throw new ErrorWithStatus({
+        message: 'Không tìm thấy dữ liệu của người dùng này.',
+        status: httpStatus.NOT_FOUND
+      });
+
+    const project_ids = (await db.projects.find({ admin_id: user_id }).toArray()).map((item) => item._id);
+    const member_project = await db.memberProject.find({ project_id: { $in: project_ids } }).toArray();
+    const escrowing = member_project.reduce((sum, item) => sum + item.escrowed, 0);
+
+    if (user.amount - escrowing < payload.amount)
+      throw new ErrorWithStatus({
+        status: httpStatus.BAD_REQUEST,
+        message: 'Số dư khả dụng không đủ để ký quỹ!'
+      });
+
+    const res = await db.memberProject.findOneAndUpdate(
+      { _id: new ObjectId(payload.member_project_id) },
+      {
+        $inc: { escrowed: Number(payload.amount) }
+      }
+    );
+    return res;
   }
 }
 
