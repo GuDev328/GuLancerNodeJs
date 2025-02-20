@@ -37,13 +37,10 @@ export const getProjectConversationController = async (req: Request<ParamsDictio
 
 export const getChatUsersController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const userId = req.body.decodeAuthorization.payload.userId;
-  const limit = Number(req.query.limit as string);
-  const pageInput = Number(req.query.page as string);
-  const { result, page, total_page } = await conversationsService.getChatUsers(userId, limit, pageInput);
+  const result = await conversationsService.getChatUsers(userId);
   res.status(200).json({
     result,
-    page,
-    total_page,
+
     message: 'Get chat users suscess'
   });
 };

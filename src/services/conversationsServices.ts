@@ -2,6 +2,7 @@ import db from '~/services/databaseServices';
 import { ObjectId } from 'mongodb';
 import { DateVi } from '~/utils/date-vi';
 import { ErrorWithStatus } from '~/models/Errors';
+import UserConversation from '~/models/schemas/UserConversation';
 
 class ConversationsService {
   constructor() {}
@@ -43,58 +44,58 @@ class ConversationsService {
     };
   }
 
-  async getChatUsers(userId: string, limit: number, page: number) {
+  async getChatUsers(userId: string) {
     const result = await db.userConversations
       .aggregate([
         {
           $match: {
-            user_id: new ObjectId(userId)
+            $or: [{ user_id_1: new ObjectId(userId) }, { user_id_2: new ObjectId(userId) }]
           }
         },
         {
           $lookup: {
             from: 'Users',
-            localField: 'chat_with',
+            localField: 'user_id_1',
             foreignField: '_id',
-            as: 'user'
+            as: 'user_1_info'
           }
         },
         {
-          $unwind: '$user'
+          $lookup: {
+            from: 'Users',
+            localField: 'user_id_2',
+            foreignField: '_id',
+            as: 'user_2_info'
+          }
         },
         {
-          $skip: (page - 1) * limit
-        },
-        {
-          $limit: limit
+          $sort: {
+            'last_message.time': -1
+          }
         }
       ])
       .toArray();
-    const total = await db.userConversations.countDocuments({
-      user_id: new ObjectId(userId)
-    });
-    return {
-      result,
-      page,
-      total_page: Math.ceil(total / limit)
-    };
+
+    return result;
   }
 
   async addNewConversation(senderId: string, receiverId: string) {
     const checkConversation = await db.userConversations.findOne({
-      user_id: new ObjectId(senderId),
-      chat_with: new ObjectId(receiverId)
+      $or: [
+        { user_id_1: new ObjectId(senderId), user_id_2: new ObjectId(receiverId) },
+        { user_id_1: new ObjectId(receiverId), user_id_2: new ObjectId(senderId) }
+      ]
     });
+
     if (checkConversation) {
-      throw new ErrorWithStatus({
-        message: 'Conversation already exists',
-        status: 400
-      });
+      return checkConversation;
     }
-    const newConversation = await db.userConversations.insertOne({
-      user_id: new ObjectId(senderId),
-      chat_with: new ObjectId(receiverId)
-    });
+    const newConversation = await db.userConversations.insertOne(
+      new UserConversation({
+        user_id_1: new ObjectId(senderId),
+        user_id_2: new ObjectId(receiverId)
+      })
+    );
     return newConversation;
   }
 

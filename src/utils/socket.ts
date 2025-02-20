@@ -7,6 +7,7 @@ import db from '~/services/databaseServices';
 import Conversation from '~/models/schemas/ConversationSchema';
 import { ObjectId } from 'mongodb';
 import { DefaultEventsMap } from 'node_modules/socket.io/dist/typed-events';
+import { DateVi } from './date-vi';
 
 const initializeSocket = (httpServer: ServerHttp) => {
   const io = new Server(httpServer, {
@@ -73,6 +74,23 @@ const initializeSocket = (httpServer: ServerHttp) => {
           medias: medias
         })
       );
+      await db.userConversations.findOneAndUpdate(
+        {
+          $or: [
+            { user_id_1: new ObjectId(fromUserId), user_id_2: new ObjectId(receiverUserId) },
+            { user_id_1: new ObjectId(fromUserId), user_id_2: new ObjectId(receiverUserId) }
+          ]
+        },
+        {
+          $set: {
+            last_message: {
+              message: medias && medias.length > 0 ? 'File đa phương tiện' : contentChat,
+              time: DateVi(),
+              user_id: new ObjectId(fromUserId)
+            }
+          }
+        }
+      );
 
       if (receiverSocketId) {
         socket.to(receiverSocketId).emit('receiver-chat', {
@@ -95,7 +113,6 @@ const initializeSocket = (httpServer: ServerHttp) => {
     });
 
     socket.on('newPChat', async (room, data) => {
-      console.log('newPChat', data);
       const contentChat = data.content || '';
       const medias = data.medias || [];
       const receiverUserId = data.receiver_id;
