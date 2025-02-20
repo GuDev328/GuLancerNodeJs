@@ -14,7 +14,9 @@ import {
   getMyProgressController,
   getMyProjectsController,
   getOverviewProgress,
+  memberDonePhaseController,
   memberStartPhaseController,
+  payForMemberController,
   rejectApplyInviteController,
   toProcessingController,
   toRecruitingController,
@@ -61,5 +63,7 @@ router.post(
 );
 
 router.post('/member-start-phase', accessTokenValidator, catchError(memberStartPhaseController));
+router.post('/member-done-phase', accessTokenValidator, catchError(memberDonePhaseController));
+router.post('/pay-for-member', accessTokenValidator, isAdminProjectValidator, catchError(payForMemberController));
 
 export default router;

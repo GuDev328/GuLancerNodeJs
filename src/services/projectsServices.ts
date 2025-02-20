@@ -1,5 +1,5 @@
 import db from '~/services/databaseServices';
-import { ObjectId } from 'mongodb';
+import { ObjectId, WithId } from 'mongodb';
 import {
   AcceptApplyInviteRequest,
   ApplyInviteRequest,
@@ -700,17 +700,12 @@ class ProjectsService {
         else return sum;
       }, 0);
       amountPaid += totalPaid;
-      const phaseCompleteReverse = item.milestone_info
-        .slice()
-        .reverse()
-        .findIndex((itemC) => itemC.status === 'COMPLETE');
-      const lastPhaseComplete =
-        phaseCompleteReverse !== -1 ? item.milestone_info.length - 1 - phaseCompleteReverse : -1;
+      const { currentPhase } = projectsService.getCurrentPhase(item);
 
       progressMember.push({
         ...item,
         totalPaid,
-        currentPhase: item.milestone_info[lastPhaseComplete + 1]
+        currentPhase
       });
     });
     return {
@@ -747,6 +742,20 @@ class ProjectsService {
       }
     );
     return res;
+  }
+
+  getCurrentPhase(membersProject: WithId<MemberProject>) {
+    const phaseCompleteReverse = membersProject.milestone_info
+      .slice()
+      .reverse()
+      .findIndex((itemC) => itemC.status === 'COMPLETE');
+    let lastPhaseComplete =
+      phaseCompleteReverse !== -1 ? membersProject.milestone_info.length - 1 - phaseCompleteReverse : -1;
+    if (lastPhaseComplete === membersProject.milestone_info.length - 1) {
+      lastPhaseComplete--;
+    }
+    const currentPhase = membersProject.milestone_info[lastPhaseComplete + 1];
+    return { currentPhase, indexCurrentPhase: lastPhaseComplete + 1 };
   }
 }
 

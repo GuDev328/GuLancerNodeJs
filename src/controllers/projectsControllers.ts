@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ObjectId } from 'mongodb';
-import { StatusProject } from '~/constants/enum';
+import { HistoryAmountTypeEnum, StatusProject } from '~/constants/enum';
 import { httpStatus } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/models/Errors';
 import {
@@ -15,9 +15,11 @@ import {
   GetApplyInviteRequest,
   GetMyProjectsRequest
 } from '~/models/requests/ProjectRequest';
+import HistoryAmount from '~/models/schemas/HistoryAmountSchema';
 import db from '~/services/databaseServices';
 import projectsService from '~/services/projectsServices';
 import bookmarksService from '~/services/projectsServices';
+import { DateVi } from '~/utils/date-vi';
 
 export const createProjectController = async (
   req: Request<ParamsDictionary, any, CreateProjectRequest>,
@@ -318,15 +320,9 @@ export const toRecruitingController = async (req: Request<ParamsDictionary, any,
 export const toProcessingController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const membersProject = await db.memberProject.find({ project_id: new ObjectId(req.body.project_id) }).toArray();
 
-  let isAllMemberNotReady = true;
-  membersProject.forEach((item, index) => {
-    const phaseCompleteReverse = item.milestone_info
-      .slice()
-      .reverse()
-      .findIndex((itemC) => itemC.status === 'COMPLETE');
-    const lastPhaseComplete = phaseCompleteReverse !== -1 ? item.milestone_info.length - 1 - phaseCompleteReverse : -1;
-    const currentPhase = item.milestone_info[lastPhaseComplete + 1];
-    if (currentPhase.status !== 'NOT_READY') isAllMemberNotReady = false;
+  const isAllMemberNotReady = membersProject.every((item, index) => {
+    const { currentPhase } = projectsService.getCurrentPhase(item);
+    return currentPhase.status === 'NOT_READY';
   });
 
   const result = await db.projects.findOneAndUpdate(
@@ -355,15 +351,11 @@ export const memberStartPhaseController = async (req: Request<ParamsDictionary, 
 
   if (!membersProject)
     throw new ErrorWithStatus({ message: 'Không tìm thấy thành viên dự án', status: httpStatus.NOT_FOUND });
-  const phaseCompleteReverse = membersProject.milestone_info
-    .slice()
-    .reverse()
-    .findIndex((itemC) => itemC.status === 'COMPLETE');
-  const lastPhaseComplete =
-    phaseCompleteReverse !== -1 ? membersProject.milestone_info.length - 1 - phaseCompleteReverse : -1;
-  const currentPhase = membersProject.milestone_info[lastPhaseComplete + 1];
+
+  const { currentPhase, indexCurrentPhase } = projectsService.getCurrentPhase(membersProject);
+
   const newMileStoneInfo = membersProject.milestone_info;
-  newMileStoneInfo[lastPhaseComplete + 1] = {
+  newMileStoneInfo[indexCurrentPhase] = {
     ...currentPhase,
     status: 'PROCESSING'
   };
@@ -380,6 +372,131 @@ export const memberStartPhaseController = async (req: Request<ParamsDictionary, 
     }
   );
 
+  if (project.status === StatusProject.PendingMemberReady) {
+    await db.projects.findOneAndUpdate(
+      { _id: project_id },
+      {
+        $set: {
+          status: StatusProject.Processing
+        }
+      }
+    );
+  }
+
+  res.status(200).json({
+    message: 'Thành công'
+  });
+};
+
+export const memberDonePhaseController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const user_id = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const project_id = new ObjectId(req.body.project_id);
+
+  const project = await db.projects.findOne({ _id: project_id });
+
+  if (!project) throw new ErrorWithStatus({ message: 'Dự án không tồn tại', status: httpStatus.NOT_FOUND });
+
+  const memberProject = await db.memberProject.findOne({ project_id, user_id });
+
+  if (!memberProject)
+    throw new ErrorWithStatus({ message: 'Không tìm thấy thành viên dự án', status: httpStatus.NOT_FOUND });
+  const { currentPhase, indexCurrentPhase } = projectsService.getCurrentPhase(memberProject);
+  const newMileStoneInfo = memberProject.milestone_info;
+  newMileStoneInfo[indexCurrentPhase] = {
+    ...currentPhase,
+    day_to_done: DateVi(),
+    status: 'PAYING'
+  };
+
+  await db.memberProject.findOneAndUpdate(
+    { project_id, user_id },
+    {
+      $set: { milestone_info: newMileStoneInfo }
+    }
+  );
+
+  const membersProject = await db.memberProject.find({ project_id }).toArray();
+  const isAllMemberPaying = membersProject.every((item) => {
+    const { currentPhase } = projectsService.getCurrentPhase(item);
+    return currentPhase.status === 'PAYING';
+  });
+  if (isAllMemberPaying) {
+    await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.Paying } });
+  }
+  res.status(200).json({
+    message: 'Thành công'
+  });
+};
+
+export const payForMemberController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const admin_id = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const user_id = new ObjectId(req.body.user_id);
+  const project_id = new ObjectId(req.body.project_id);
+
+  const memberProject = await db.memberProject.findOne({ project_id, user_id });
+
+  if (!memberProject)
+    throw new ErrorWithStatus({ message: 'Không tìm thấy thành viên dự án', status: httpStatus.NOT_FOUND });
+
+  const { currentPhase, indexCurrentPhase } = projectsService.getCurrentPhase(memberProject);
+  const newEscrowing = memberProject.escrowed - currentPhase.salary;
+
+  db.users.findOneAndUpdate(
+    { _id: user_id },
+    {
+      $inc: { amount: currentPhase.salary }
+    }
+  );
+  db.users.findOneAndUpdate(
+    { _id: admin_id },
+    {
+      $inc: { amount: -1 * currentPhase.salary }
+    }
+  );
+  db.historyAmounts.insertOne(
+    new HistoryAmount({
+      user_id,
+      amount: currentPhase.salary,
+      type: HistoryAmountTypeEnum.FROM_PROJECT
+    })
+  );
+  db.historyAmounts.insertOne(
+    new HistoryAmount({
+      user_id: admin_id,
+      amount: currentPhase.salary,
+      type: HistoryAmountTypeEnum.TO_PROJECT
+    })
+  );
+
+  const newMileStoneInfo = memberProject.milestone_info;
+  newMileStoneInfo[indexCurrentPhase] = {
+    ...currentPhase,
+    day_to_payment: DateVi(),
+    status: 'COMPLETE'
+  };
+
+  await db.memberProject.findOneAndUpdate(
+    { project_id, user_id },
+    {
+      $set: { milestone_info: newMileStoneInfo, escrowed: newEscrowing }
+    }
+  );
+
+  const membersProject = await db.memberProject.find({ project_id }).toArray();
+  const isAllPhaseDone = membersProject.every((item) => {
+    return item.milestone_info[item.milestone_info.length - 1].status === 'COMPLETE';
+  });
+  const isAllNotReady = membersProject.every((item) => {
+    const { currentPhase } = projectsService.getCurrentPhase(item);
+    return item.milestone_info[item.milestone_info.length - 1].status === 'NOT_READY';
+  });
+  if (isAllPhaseDone) {
+    await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.Complete } });
+  } else if (isAllNotReady) {
+    await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.PendingMemberReady } });
+  } else {
+    await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.Processing } });
+  }
   res.status(200).json({
     message: 'Thành công'
   });
