@@ -7,6 +7,7 @@ interface MilestoneInfoType {
   day_to_done: Date | undefined;
   day_to_payment: Date | undefined;
   status: 'NOT_READY' | 'PROCESSING' | 'PAYING' | 'COMPLETE' | 'DISPUTED';
+  dispute_id?: ObjectId;
 }
 
 interface MemberProjectType {
@@ -45,7 +46,8 @@ export default class MemberProject {
         salary: member.salary || 0,
         day_to_done: undefined,
         day_to_payment: undefined,
-        status: 'NOT_READY'
+        status: 'NOT_READY',
+        dispute_id: undefined
       }
     ];
     this.date_to_complete = member.date_to_complete || DateVi();

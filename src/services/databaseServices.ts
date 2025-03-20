@@ -19,6 +19,7 @@ import Task from '~/models/schemas/TaskSchema';
 import MemberProject from '~/models/schemas/MemberProject';
 import Payment from '~/models/schemas/PaymentSchema';
 import HistoryAmount from '~/models/schemas/HistoryAmountSchema';
+import Dispute from '~/models/schemas/DisputeSchema';
 const uri = env.mongodbURI;
 
 class DatabaseServices {
@@ -86,6 +87,9 @@ class DatabaseServices {
   }
   get memberProject(): Collection<MemberProject> {
     return this.db.collection('MemberProject');
+  }
+  get disputes(): Collection<Dispute> {
+    return this.db.collection('Disputes');
   }
   get payments(): Collection<Payment> {
     return this.db.collection('Payments');

@@ -16,7 +16,8 @@ export interface Media {
 export enum MediaType {
   Image,
   Video,
-  VideoHLS
+  VideoHLS,
+  OtherFile
 }
 
 export enum VerifyStatus {

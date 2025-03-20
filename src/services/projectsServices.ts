@@ -633,7 +633,8 @@ class ProjectsService {
       ...item,
       day_to_done: new Date(item.day_to_done),
       day_to_payment: undefined,
-      status: 'NOT_READY' as 'NOT_READY' | 'PROCESSING' | 'PAYING' | 'COMPLETE' | 'DISPUTED'
+      status: 'NOT_READY' as 'NOT_READY' | 'PROCESSING' | 'PAYING' | 'COMPLETE' | 'DISPUTED',
+      dispute_id: undefined
     }));
     const result = await db.memberProject.findOneAndUpdate(
       {
