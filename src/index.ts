@@ -17,7 +17,7 @@ import cors, { CorsOptions } from 'cors';
 import initializeSocket from './utils/socket';
 import { env, isProduction } from './constants/config';
 import helmet from 'helmet';
-
+import disputesRouters from '~/routers/disputesRouters';
 const app = express();
 const httpServer = createServer(app);
 
@@ -46,6 +46,7 @@ app.use('/technology', technologyRouters);
 app.use('/fields', fieldRouters);
 app.use('/tasks', tasksRouters);
 app.use('/payments', paymentsRouters);
+app.use('/disputes', disputesRouters);
 app.use(defaultsErrorHandler);
 
 const port = env.port || 3030;

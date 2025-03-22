@@ -1,12 +1,13 @@
 import { ObjectId } from 'mongodb';
-import { Media } from '~/constants/enum';
+import { IFile } from '~/constants/enum';
 import { DateVi } from '~/utils/date-vi';
 
 export interface ProofType {
   issue_description: string;
   expected_result: string;
-  files: Media[];
+  files: IFile[];
   share_proof: boolean;
+  admin_into_project: boolean;
 }
 
 interface DisputeType {
@@ -40,14 +41,16 @@ export default class Dispute {
       issue_description: '',
       expected_result: '',
       files: [],
-      share_proof: false
+      share_proof: false,
+      admin_into_project: false
     };
     this.employer_id = dispute.employer_id;
     this.employer_proof = {
       issue_description: '',
       expected_result: '',
       files: [],
-      share_proof: false
+      share_proof: false,
+      admin_into_project: false
     };
     this.reporter = dispute.reporter;
     this.status = 'CREATED';

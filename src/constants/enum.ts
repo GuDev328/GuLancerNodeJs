@@ -13,6 +13,11 @@ export interface Media {
   url: string;
   type: MediaType;
 }
+export interface IFile {
+  url: string;
+  description: string;
+  type: MediaType;
+}
 export enum MediaType {
   Image,
   Video,
