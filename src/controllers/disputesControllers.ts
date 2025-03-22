@@ -40,7 +40,8 @@ export const updateDisputeController = async (
   req: Request<ParamsDictionary, any, UpdateDisputeRequest>,
   res: Response
 ) => {
-  const dispute = await disputesService.updateDispute(req.body);
+  const { id } = req.params;
+  const dispute = await disputesService.updateDispute(id, req.body);
   res.status(200).json({
     message: 'Update dispute success',
     result: dispute

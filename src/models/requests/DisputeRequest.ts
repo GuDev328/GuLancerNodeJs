@@ -1,10 +1,6 @@
 import { JwtPayload } from 'jsonwebtoken';
 import { Media } from '~/constants/enum';
-
-interface ProofType {
-  content: string;
-  files: Media[];
-}
+import { ProofType } from '../schemas/DisputeSchema';
 
 export interface CreateDisputeRequest {
   decodeAuthorization: JwtPayload;
@@ -15,7 +11,6 @@ export interface CreateDisputeRequest {
 
 export interface UpdateDisputeRequest {
   decodeAuthorization: JwtPayload;
-  _id: string;
   proof: ProofType;
 }
 

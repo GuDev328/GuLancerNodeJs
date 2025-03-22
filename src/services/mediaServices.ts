@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import path from 'path';
 import sharp from 'sharp';
-import { getFiles, handleUploadImage, handleUploadVideo, handleUploadVideoHLS } from '~/utils/file';
+import { getFiles, handleUploadFile, handleUploadImage, handleUploadVideo, handleUploadVideoHLS } from '~/utils/file';
 import fs from 'fs-extra';
 import { env, isProduction } from '~/constants/config';
 import { Media, MediaType } from '~/constants/enum';
@@ -67,7 +67,9 @@ class MediasService {
     const filesUploaded = await handleUploadImage(req);
     const result: Media[] = await Promise.all(
       filesUploaded.map(async (fileUploaded) => {
-        const newPath = path.resolve('uploads/images') + `\\${fileUploaded.newFilename.split('.')[0]}.jpg`;
+        const newPath =
+          path.resolve('uploads/images') +
+          `\\${fileUploaded.originalFilename?.split('.')[0]}${fileUploaded.newFilename.split('.')[0]}.jpg`;
         const info = await sharp(fileUploaded.filepath).jpeg({ quality: 90 });
         await info.toFile(newPath);
         const s3Result = await UploadFileToS3(
@@ -85,12 +87,31 @@ class MediasService {
     return result;
   }
 
+  async handleUploadFile(req: Request) {
+    const filesUploaded = await handleUploadFile(req);
+    const result: Media[] = await Promise.all(
+      filesUploaded.map(async (fileUploaded) => {
+        const s3Result = await UploadFileToS3(
+          'files/' + fileUploaded.originalFilename?.split('.')[0] + fileUploaded.newFilename,
+          fileUploaded.filepath,
+          mime.lookup(fileUploaded.filepath) as string
+        );
+        await fs.remove(fileUploaded.filepath);
+        return {
+          url: (s3Result as CompleteMultipartUploadOutput).Location as string,
+          type: MediaType.OtherFile
+        };
+      })
+    );
+    return result;
+  }
+
   async handleUploadVideo(req: Request) {
     const filesUploaded = await handleUploadVideo(req);
     const result: Media[] = await Promise.all(
       filesUploaded.map(async (fileUploaded) => {
         const s3Result = await UploadFileToS3(
-          'videos/' + fileUploaded.newFilename,
+          'videos/' + fileUploaded.originalFilename?.split('.')[0] + fileUploaded.newFilename,
           fileUploaded.filepath,
           mime.lookup(fileUploaded.filepath) as string
         );

@@ -86,6 +86,33 @@ export const handleUploadVideo = async (req: Request) => {
   });
 };
 
+export const handleUploadFile = async (req: Request) => {
+  const formidable = (await import('formidable')).default;
+  const form = formidable({
+    uploadDir: path.resolve('uploads/files'),
+    maxFiles: 1,
+    keepExtensions: true,
+    maxFileSize: 50 * 1024 * 1024, // 50MB
+    maxTotalFileSize: 50 * 1024 * 1024 // 50MB
+  });
+  return new Promise<File[]>((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        reject(err);
+      }
+      if (!files.file) {
+        reject(
+          new ErrorWithStatus({
+            status: httpStatus.BAD_REQUEST,
+            message: 'File không được để trống'
+          }) as any
+        );
+      }
+      resolve(files.file as File[]);
+    });
+  });
+};
+
 export const handleUploadVideoHLS = async (req: Request) => {
   const formidable = (await import('formidable')).default;
   const uniqueName = nanoid();

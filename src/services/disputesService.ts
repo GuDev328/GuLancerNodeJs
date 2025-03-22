@@ -64,9 +64,8 @@ class DisputeService {
     return savedDispute;
   }
 
-  async updateDispute(payload: UpdateDisputeRequest) {
-    const { _id, ...payloadNoId } = payload;
-    const findDispute = await db.disputes.findOne({ _id: new ObjectId(_id) });
+  async updateDispute(id: string, payload: UpdateDisputeRequest) {
+    const findDispute = await db.disputes.findOne({ _id: new ObjectId(id) });
     if (!findDispute) {
       throw new ErrorWithStatus({
         status: 400,
@@ -81,7 +80,7 @@ class DisputeService {
       set_proof.employer_proof = payload.proof;
     }
     const result = await db.disputes.findOneAndUpdate(
-      { _id: new ObjectId(_id) },
+      { _id: new ObjectId(id) },
       {
         $set: {
           ...set_proof
@@ -211,7 +210,7 @@ class DisputeService {
           ...dispute,
           freelancer_proof: {
             ...dispute.freelancer_proof,
-            files: []
+            files: undefined
           }
         };
       }
@@ -224,7 +223,7 @@ class DisputeService {
           ...dispute,
           employer_proof: {
             ...dispute.employer_proof,
-            files: []
+            files: undefined
           }
         };
       }
