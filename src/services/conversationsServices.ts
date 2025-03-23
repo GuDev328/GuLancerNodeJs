@@ -145,6 +145,45 @@ class ConversationsService {
       total_page: Math.ceil(total / limit)
     };
   }
+
+  async getDisputeConversation(disputeId: string, limit: number, page: number) {
+    const result = await db.conversations
+      .aggregate([
+        {
+          $match: {
+            receiver_id: new ObjectId(disputeId)
+          }
+        },
+        {
+          $sort: { created_at: -1 }
+        },
+        {
+          $skip: limit * (page - 1)
+        },
+        {
+          $limit: limit
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'sender_id',
+            foreignField: '_id',
+            as: 'sender_info'
+          }
+        }
+      ])
+      .toArray();
+
+    const total = await db.conversations.countDocuments({
+      receiver_id: new ObjectId(disputeId)
+    });
+
+    return {
+      result,
+      page,
+      total_page: Math.ceil(total / limit)
+    };
+  }
 }
 
 const conversationsService = new ConversationsService();

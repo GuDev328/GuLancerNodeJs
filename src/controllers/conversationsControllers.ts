@@ -35,6 +35,19 @@ export const getProjectConversationController = async (req: Request<ParamsDictio
   });
 };
 
+export const getDisputeConversationController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const disputeId = req.params.disputeId;
+  const limit = Number(req.query.limit as string);
+  const pageInput = Number(req.query.page as string);
+  const { result, page, total_page } = await conversationsService.getDisputeConversation(disputeId, limit, pageInput);
+  res.status(200).json({
+    result,
+    page,
+    total_page,
+    message: 'Get conversation suscess'
+  });
+};
+
 export const getChatUsersController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const userId = req.body.decodeAuthorization.payload.userId;
   const result = await conversationsService.getChatUsers(userId);
