@@ -15,6 +15,7 @@ export interface UpdateDisputeRequest {
 }
 
 export interface ChangeStatusDisputeRequest {
+  decodeAuthorization: JwtPayload;
   _id: string;
   status: 'CREATED' | 'PROCESSING' | 'RESOLVED' | 'CANCEL' | 'NEED_MORE_PROOF';
 }
@@ -22,4 +23,12 @@ export interface ChangeStatusDisputeRequest {
 export interface CancelDisputeRequest {
   decodeAuthorization: JwtPayload;
   _id: string;
+}
+
+export interface DisputeListSearchRequest {
+  status: 'CREATED' | 'PROCESSING' | 'RESOLVED' | 'CANCEL' | 'NEED_MORE_PROOF';
+  project_name: string;
+  freelancer_name: string;
+  employer_name: string;
+  solver_id: string;
 }

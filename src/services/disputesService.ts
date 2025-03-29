@@ -13,14 +13,27 @@ import {
   CancelDisputeRequest,
   ChangeStatusDisputeRequest,
   CreateDisputeRequest,
+  DisputeListSearchRequest,
   UpdateDisputeRequest
 } from '~/models/requests/DisputeRequest';
 import projectsService from './projectsServices';
 import { ErrorWithStatus } from '~/models/Errors';
 import { httpStatus } from '~/constants/httpStatus';
+import { JwtPayload } from 'jsonwebtoken';
 
 class DisputeService {
   constructor() {}
+
+  checkRole(decodeAuthorization: JwtPayload, dispute: Dispute) {
+    const user_id = new ObjectId(decodeAuthorization.payload.userId);
+    if (
+      user_id.equals(dispute.employer_id) ||
+      user_id.equals(dispute.freelancer_id) ||
+      decodeAuthorization.payload.role === RoleType.Admin
+    ) {
+      return true;
+    } else return false;
+  }
 
   async createDispute(payload: CreateDisputeRequest) {
     const findProject = await db.projects.findOne({ _id: new ObjectId(payload.project_id) });
@@ -72,6 +85,12 @@ class DisputeService {
         message: 'Không tìm thấy tranh chấp này'
       });
     }
+    if (!this.checkRole(payload.decodeAuthorization, findDispute)) {
+      throw new ErrorWithStatus({
+        status: 400,
+        message: 'Bạn không có quyền cập nhật tranh chấp này'
+      });
+    }
     const set_proof: any = {};
     const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
     if (user_id.equals(findDispute.freelancer_id)) {
@@ -98,6 +117,12 @@ class DisputeService {
       throw new ErrorWithStatus({
         status: 400,
         message: 'Không tìm thấy tranh chấp này'
+      });
+    }
+    if (!this.checkRole(payload.decodeAuthorization, findDispute)) {
+      throw new ErrorWithStatus({
+        status: 400,
+        message: 'Bạn không có quyền cập nhật tranh chấp này'
       });
     }
     const result = await db.disputes.findOneAndUpdate(
@@ -131,8 +156,7 @@ class DisputeService {
     });
   }
 
-  async getDisputeById(id: string, user_id: ObjectId) {
-    console.log(id, user_id);
+  async getDisputeById(id: string, user_id: ObjectId, decodeAuthorization: JwtPayload) {
     const disputes = await db.disputes
       .aggregate([
         {
@@ -190,7 +214,6 @@ class DisputeService {
         }
       ])
       .toArray();
-    console.log(disputes);
     if (disputes.length === 0) {
       throw new ErrorWithStatus({
         status: 400,
@@ -198,10 +221,21 @@ class DisputeService {
       });
     }
     const dispute = disputes[0];
+    if (!this.checkRole(decodeAuthorization, dispute as Dispute)) {
+      throw new ErrorWithStatus({
+        status: 400,
+        message: 'Bạn không có quyền xem tranh chấp này'
+      });
+    }
     const user = await db.users.findOne({ _id: new ObjectId(user_id) });
     if (user?.role === RoleType.Admin) {
       return dispute;
     }
+
+    if (decodeAuthorization.payload.role === RoleType.Admin) {
+      return dispute;
+    }
+
     if (dispute.employer_id.equals(user_id)) {
       if (dispute.freelancer_proof.share_proof) {
         return dispute;
@@ -228,10 +262,109 @@ class DisputeService {
         };
       }
     }
-    throw new ErrorWithStatus({
-      status: httpStatus.FORBIDDEN,
-      message: 'Bạn không có quyền xem tranh chấp này'
-    });
+  }
+
+  async getListDispute(page: number, limit: number, payload: DisputeListSearchRequest) {
+    const { status, project_name, freelancer_name, employer_name, solver_id } = payload;
+
+    const pipeline: any[] = [
+      {
+        $lookup: {
+          from: 'Projects',
+          localField: 'project_id',
+          foreignField: '_id',
+          as: 'project_info'
+        }
+      },
+      {
+        $lookup: {
+          from: 'Users',
+          localField: 'freelancer_id',
+          foreignField: '_id',
+          as: 'freelancer_info'
+        }
+      },
+      {
+        $lookup: {
+          from: 'Users',
+          localField: 'employer_id',
+          foreignField: '_id',
+          as: 'employer_info'
+        }
+      },
+      {
+        $lookup: {
+          from: 'Users',
+          localField: 'solver_id',
+          foreignField: '_id',
+          as: 'solver_info'
+        }
+      },
+      {
+        $unwind: {
+          path: '$project_info',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $unwind: {
+          path: '$freelancer_info',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $unwind: {
+          path: '$employer_info',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $unwind: {
+          path: '$solver_info',
+          preserveNullAndEmptyArrays: true
+        }
+      }
+    ];
+
+    const matchStage: any = {};
+
+    if (status) {
+      matchStage.status = status;
+    }
+
+    if (project_name) {
+      matchStage['project_info.title'] = { $regex: project_name, $options: 'i' };
+    }
+
+    if (freelancer_name) {
+      matchStage['freelancer_info.name'] = { $regex: freelancer_name, $options: 'i' };
+      matchStage['freelancer_info.username'] = { $regex: freelancer_name, $options: 'i' };
+    }
+
+    if (employer_name) {
+      matchStage['employer_info.name'] = { $regex: employer_name, $options: 'i' };
+      matchStage['employer_info.username'] = { $regex: employer_name, $options: 'i' };
+    }
+
+    if (solver_id) {
+      matchStage.solver_id = new ObjectId(solver_id);
+    }
+
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.push({ $match: matchStage });
+    }
+
+    pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
+
+    const disputes = await db.disputes.aggregate(pipeline).toArray();
+    const total_record = await db.disputes.aggregate([...pipeline.slice(0, -2)]).toArray();
+    return {
+      page,
+      limit,
+      disputes,
+      total_page: Math.ceil(total_record.length / limit),
+      total_record: total_record.length
+    };
   }
 }
 
