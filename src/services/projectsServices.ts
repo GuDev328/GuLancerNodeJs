@@ -15,11 +15,19 @@ import Bookmark from '~/models/schemas/BookmarkSchema';
 import { httpStatus } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/models/Errors';
 import Project from '~/models/schemas/ProjectSchema';
-import { InvitationType, ProjectOrderBy, RoleMemberProject, StatusProject } from '~/constants/enum';
+import {
+  HistoryAmountTypeEnum,
+  InvitationType,
+  ProjectOrderBy,
+  RoleMemberProject,
+  StatusProject
+} from '~/constants/enum';
 import Field from '~/models/schemas/FieldSchema';
 import Technology from '~/models/schemas/TechnologySchema';
 import ApplyInvitation from '~/models/schemas/ApplyInvitation';
 import MemberProject from '~/models/schemas/MemberProject';
+import HistoryAmount from '~/models/schemas/HistoryAmountSchema';
+import { DateVi } from '~/utils/date-vi';
 
 class ProjectsService {
   constructor() {}
@@ -631,6 +639,7 @@ class ProjectsService {
   async editMyProgress(payload: EditMyProgressRequest) {
     const formatMilestoneInfo = payload.milestone_info.map((item) => ({
       ...item,
+      salary_unpaid: item.salary,
       day_to_done: new Date(item.day_to_done),
       day_to_payment: undefined,
       status: 'NOT_READY' as 'NOT_READY' | 'PROCESSING' | 'PAYING' | 'COMPLETE' | 'DISPUTED',
@@ -757,6 +766,74 @@ class ProjectsService {
     }
     const currentPhase = membersProject.milestone_info[lastPhaseComplete + 1];
     return { currentPhase, indexCurrentPhase: lastPhaseComplete + 1 };
+  }
+
+  async payForMember(project_id: ObjectId, user_id: ObjectId, project_admin_id: ObjectId) {
+    const memberProject = await db.memberProject.findOne({ project_id, user_id });
+
+    if (!memberProject)
+      throw new ErrorWithStatus({ message: 'Không tìm thấy thành viên dự án', status: httpStatus.NOT_FOUND });
+
+    const { currentPhase, indexCurrentPhase } = projectsService.getCurrentPhase(memberProject);
+    const newEscrowing = memberProject.escrowed - currentPhase.salary_unpaid;
+
+    db.users.findOneAndUpdate(
+      { _id: user_id },
+      {
+        $inc: { amount: currentPhase.salary_unpaid }
+      }
+    );
+    db.users.findOneAndUpdate(
+      { _id: project_admin_id },
+      {
+        $inc: { amount: -1 * currentPhase.salary_unpaid }
+      }
+    );
+    db.historyAmounts.insertOne(
+      new HistoryAmount({
+        user_id,
+        amount: currentPhase.salary_unpaid,
+        type: HistoryAmountTypeEnum.FROM_PROJECT
+      })
+    );
+    db.historyAmounts.insertOne(
+      new HistoryAmount({
+        user_id: project_admin_id,
+        amount: currentPhase.salary_unpaid,
+        type: HistoryAmountTypeEnum.TO_PROJECT
+      })
+    );
+
+    const newMileStoneInfo = memberProject.milestone_info;
+    newMileStoneInfo[indexCurrentPhase] = {
+      ...currentPhase,
+      salary_unpaid: 0,
+      day_to_payment: DateVi(),
+      status: 'COMPLETE'
+    };
+
+    await db.memberProject.findOneAndUpdate(
+      { project_id, user_id },
+      {
+        $set: { milestone_info: newMileStoneInfo, escrowed: newEscrowing }
+      }
+    );
+
+    const membersProject = await db.memberProject.find({ project_id }).toArray();
+    const isAllPhaseDone = membersProject.every((item) => {
+      return item.milestone_info[item.milestone_info.length - 1].status === 'COMPLETE';
+    });
+    const isAllNotReady = membersProject.every((item) => {
+      const { currentPhase } = projectsService.getCurrentPhase(item);
+      return currentPhase.status === 'NOT_READY';
+    });
+    if (isAllPhaseDone) {
+      await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.Complete } });
+    } else if (isAllNotReady) {
+      await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.PendingMemberReady } });
+    } else {
+      await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.Processing } });
+    }
   }
 }
 

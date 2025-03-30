@@ -359,7 +359,7 @@ export const memberStartPhaseController = async (req: Request<ParamsDictionary, 
     ...currentPhase,
     status: 'PROCESSING'
   };
-  if (currentPhase.salary > membersProject.escrowed)
+  if (currentPhase.salary_unpaid > membersProject.escrowed)
     throw new ErrorWithStatus({
       message: 'Chủ dự án chưa ký quỹ cho giai đoạn này. Hãy liên hệ với chủ dự án',
       status: httpStatus.BAD_REQUEST
@@ -433,71 +433,9 @@ export const payForMemberController = async (req: Request<ParamsDictionary, any,
   const user_id = new ObjectId(req.body.user_id);
   const project_id = new ObjectId(req.body.project_id);
 
-  const memberProject = await db.memberProject.findOne({ project_id, user_id });
-
-  if (!memberProject)
-    throw new ErrorWithStatus({ message: 'Không tìm thấy thành viên dự án', status: httpStatus.NOT_FOUND });
-
-  const { currentPhase, indexCurrentPhase } = projectsService.getCurrentPhase(memberProject);
-  const newEscrowing = memberProject.escrowed - currentPhase.salary;
-
-  db.users.findOneAndUpdate(
-    { _id: user_id },
-    {
-      $inc: { amount: currentPhase.salary }
-    }
-  );
-  db.users.findOneAndUpdate(
-    { _id: admin_id },
-    {
-      $inc: { amount: -1 * currentPhase.salary }
-    }
-  );
-  db.historyAmounts.insertOne(
-    new HistoryAmount({
-      user_id,
-      amount: currentPhase.salary,
-      type: HistoryAmountTypeEnum.FROM_PROJECT
-    })
-  );
-  db.historyAmounts.insertOne(
-    new HistoryAmount({
-      user_id: admin_id,
-      amount: currentPhase.salary,
-      type: HistoryAmountTypeEnum.TO_PROJECT
-    })
-  );
-
-  const newMileStoneInfo = memberProject.milestone_info;
-  newMileStoneInfo[indexCurrentPhase] = {
-    ...currentPhase,
-    day_to_payment: DateVi(),
-    status: 'COMPLETE'
-  };
-
-  await db.memberProject.findOneAndUpdate(
-    { project_id, user_id },
-    {
-      $set: { milestone_info: newMileStoneInfo, escrowed: newEscrowing }
-    }
-  );
-
-  const membersProject = await db.memberProject.find({ project_id }).toArray();
-  const isAllPhaseDone = membersProject.every((item) => {
-    return item.milestone_info[item.milestone_info.length - 1].status === 'COMPLETE';
-  });
-  const isAllNotReady = membersProject.every((item) => {
-    const { currentPhase } = projectsService.getCurrentPhase(item);
-    return item.milestone_info[item.milestone_info.length - 1].status === 'NOT_READY';
-  });
-  if (isAllPhaseDone) {
-    await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.Complete } });
-  } else if (isAllNotReady) {
-    await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.PendingMemberReady } });
-  } else {
-    await db.projects.findOneAndUpdate({ _id: project_id }, { $set: { status: StatusProject.Processing } });
-  }
+  const result = await projectsService.payForMember(project_id, user_id, admin_id);
   res.status(200).json({
+    result,
     message: 'Thành công'
   });
 };

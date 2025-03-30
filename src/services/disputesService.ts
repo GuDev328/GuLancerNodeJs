@@ -7,7 +7,7 @@ import {
   UpdateTaskRequest
 } from '~/models/requests/TaskRequest';
 import Task from '~/models/schemas/TaskSchema';
-import { RoleType, TaskStatus } from '~/constants/enum';
+import { HistoryAmountTypeEnum, RoleType, StatusProject, TaskStatus } from '~/constants/enum';
 import Dispute from '~/models/schemas/DisputeSchema';
 import {
   CancelDisputeRequest,
@@ -20,6 +20,8 @@ import projectsService from './projectsServices';
 import { ErrorWithStatus } from '~/models/Errors';
 import { httpStatus } from '~/constants/httpStatus';
 import { JwtPayload } from 'jsonwebtoken';
+import HistoryAmount from '~/models/schemas/HistoryAmountSchema';
+import { DateVi } from '~/utils/date-vi';
 
 class DisputeService {
   constructor() {}
@@ -110,8 +112,8 @@ class DisputeService {
     return result;
   }
 
-  async changeStatusDispute(payload: ChangeStatusDisputeRequest) {
-    const { _id, status } = payload;
+  async changeStatusDispute(_id: string, payload: ChangeStatusDisputeRequest) {
+    const { status } = payload;
     const findDispute = await db.disputes.findOne({ _id: new ObjectId(_id) });
     if (!findDispute) {
       throw new ErrorWithStatus({
@@ -119,7 +121,12 @@ class DisputeService {
         message: 'Không tìm thấy tranh chấp này'
       });
     }
-    if (!this.checkRole(payload.decodeAuthorization, findDispute)) {
+    if (
+      !(
+        findDispute.reporter.equals(payload.decodeAuthorization.payload.userId) ||
+        payload.decodeAuthorization.payload.role === RoleType.Admin
+      )
+    ) {
       throw new ErrorWithStatus({
         status: 400,
         message: 'Bạn không có quyền cập nhật tranh chấp này'
@@ -365,6 +372,133 @@ class DisputeService {
       total_page: Math.ceil(total_record.length / limit),
       total_record: total_record.length
     };
+  }
+
+  async payAllDispute(id: string, payload: { description: string }) {
+    const dispute = await db.disputes.findOne({ _id: new ObjectId(id) });
+    if (!dispute) {
+      throw new ErrorWithStatus({
+        status: 400,
+        message: 'Không tìm thấy tranh chấp này'
+      });
+    }
+    const result = await projectsService.payForMember(dispute.project_id, dispute.freelancer_id, dispute.employer_id);
+    await db.disputes.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: { status: 'RESOLVED_PAY_ALL', reason_resolve: payload.description } },
+      { returnDocument: 'after' }
+    );
+    return result;
+  }
+
+  async payOneDispute(id: string, payload: { description: string; amount: number }) {
+    const dispute = await db.disputes.findOne({ _id: new ObjectId(id) });
+    if (!dispute) {
+      throw new ErrorWithStatus({
+        status: 400,
+        message: 'Không tìm thấy tranh chấp này'
+      });
+    }
+
+    const memberProject = await db.memberProject.findOne({
+      project_id: dispute.project_id,
+      user_id: dispute.freelancer_id
+    });
+
+    if (!memberProject)
+      throw new ErrorWithStatus({ message: 'Không tìm thấy thành viên dự án', status: httpStatus.NOT_FOUND });
+
+    const { currentPhase, indexCurrentPhase } = projectsService.getCurrentPhase(memberProject);
+    const newEscrowing = memberProject.escrowed - Number(payload.amount);
+
+    db.users.findOneAndUpdate(
+      { _id: dispute.freelancer_id },
+      {
+        $inc: { amount: Number(payload.amount) }
+      }
+    );
+    db.users.findOneAndUpdate(
+      { _id: dispute.employer_id },
+      {
+        $inc: { amount: -1 * Number(payload.amount) }
+      }
+    );
+    db.historyAmounts.insertOne(
+      new HistoryAmount({
+        user_id: dispute.freelancer_id,
+        amount: Number(payload.amount),
+        type: HistoryAmountTypeEnum.FROM_PROJECT
+      })
+    );
+    db.historyAmounts.insertOne(
+      new HistoryAmount({
+        user_id: dispute.employer_id,
+        amount: Number(payload.amount),
+        type: HistoryAmountTypeEnum.TO_PROJECT
+      })
+    );
+
+    const newMileStoneInfo = memberProject.milestone_info;
+    newMileStoneInfo[indexCurrentPhase] = {
+      ...currentPhase,
+      salary_unpaid: currentPhase.salary_unpaid - Number(payload.amount),
+      day_to_payment: DateVi(),
+      status: 'PROCESSING'
+    };
+
+    await db.memberProject.findOneAndUpdate(
+      { project_id: dispute.project_id, user_id: dispute.freelancer_id },
+      {
+        $set: { milestone_info: newMileStoneInfo, escrowed: newEscrowing }
+      }
+    );
+
+    await db.projects.findOneAndUpdate({ _id: dispute.project_id }, { $set: { status: StatusProject.Processing } });
+
+    const result = await db.disputes.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: { status: 'RESOLVED_PAY_PART', reason_resolve: payload.description } },
+      { returnDocument: 'after' }
+    );
+    return result;
+  }
+
+  async notPayDispute(id: string, payload: { description: string }) {
+    const dispute = await db.disputes.findOne({ _id: new ObjectId(id) });
+    if (!dispute) {
+      throw new ErrorWithStatus({
+        status: 400,
+        message: 'Không tìm thấy tranh chấp này'
+      });
+    }
+    const memberProject = await db.memberProject.findOne({
+      project_id: dispute.project_id,
+      user_id: dispute.freelancer_id
+    });
+    if (!memberProject)
+      throw new ErrorWithStatus({ message: 'Không tìm thấy thành viên dự án', status: httpStatus.NOT_FOUND });
+    const { currentPhase, indexCurrentPhase } = projectsService.getCurrentPhase(memberProject);
+    const newMileStoneInfo = memberProject.milestone_info;
+    newMileStoneInfo[indexCurrentPhase] = {
+      ...currentPhase,
+      status: 'PROCESSING'
+    };
+
+    await db.memberProject.findOneAndUpdate(
+      { project_id: dispute.project_id, user_id: dispute.freelancer_id },
+      {
+        $set: { milestone_info: newMileStoneInfo }
+      }
+    );
+
+    await db.projects.findOneAndUpdate({ _id: dispute.project_id }, { $set: { status: StatusProject.Processing } });
+
+    const result = await db.disputes.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: { status: 'RESOLVED_NOT_PAY', reason_resolve: payload.description } },
+      { returnDocument: 'after' }
+    );
+    return result;
   }
 }
 

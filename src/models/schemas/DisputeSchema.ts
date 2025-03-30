@@ -18,8 +18,15 @@ interface DisputeType {
   employer_id: ObjectId;
   employer_proof?: ProofType;
   reporter: ObjectId;
-  status?: 'CREATED' | 'PROCESSING' | 'RESOLVED' | 'CANCEL' | 'NEED_MORE_PROOF';
-  solver_id?: ObjectId;
+  status?:
+    | 'CREATED'
+    | 'PROCESSING'
+    | 'RESOLVED_PAY_ALL'
+    | 'RESOLVED_NOT_PAY'
+    | 'RESOLVED_PAY_PART'
+    | 'CANCEL'
+    | 'NEED_MORE_PROOF';
+  reason_resolve?: string;
   created_at?: Date;
 }
 
@@ -31,8 +38,15 @@ export default class Dispute {
   employer_id: ObjectId;
   employer_proof: ProofType;
   reporter: ObjectId;
-  status: 'CREATED' | 'PROCESSING' | 'RESOLVED' | 'CANCEL' | 'NEED_MORE_PROOF';
-  solver_id?: ObjectId;
+  status:
+    | 'CREATED'
+    | 'PROCESSING'
+    | 'RESOLVED_PAY_ALL'
+    | 'RESOLVED_NOT_PAY'
+    | 'RESOLVED_PAY_PART'
+    | 'CANCEL'
+    | 'NEED_MORE_PROOF';
+  reason_resolve?: string;
   created_at?: Date;
 
   constructor(dispute: DisputeType) {
@@ -56,7 +70,7 @@ export default class Dispute {
     };
     this.reporter = dispute.reporter;
     this.status = 'CREATED';
-
+    this.reason_resolve = '';
     this.created_at = DateVi();
   }
 }

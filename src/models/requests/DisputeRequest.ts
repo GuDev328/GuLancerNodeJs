@@ -16,8 +16,14 @@ export interface UpdateDisputeRequest {
 
 export interface ChangeStatusDisputeRequest {
   decodeAuthorization: JwtPayload;
-  _id: string;
-  status: 'CREATED' | 'PROCESSING' | 'RESOLVED' | 'CANCEL' | 'NEED_MORE_PROOF';
+  status:
+    | 'CREATED'
+    | 'PROCESSING'
+    | 'RESOLVED_PAY_ALL'
+    | 'RESOLVED_NOT_PAY'
+    | 'RESOLVED_PAY_PART'
+    | 'CANCEL'
+    | 'NEED_MORE_PROOF';
 }
 
 export interface CancelDisputeRequest {

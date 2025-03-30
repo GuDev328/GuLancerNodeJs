@@ -4,6 +4,7 @@ import { DateVi } from '~/utils/date-vi';
 interface MilestoneInfoType {
   no: number;
   salary: number;
+  salary_unpaid: number;
   day_to_done: Date | undefined;
   day_to_payment: Date | undefined;
   status: 'NOT_READY' | 'PROCESSING' | 'PAYING' | 'COMPLETE' | 'DISPUTED';
@@ -44,6 +45,7 @@ export default class MemberProject {
       {
         no: 1,
         salary: member.salary || 0,
+        salary_unpaid: member.salary || 0,
         day_to_done: undefined,
         day_to_payment: undefined,
         status: 'NOT_READY',

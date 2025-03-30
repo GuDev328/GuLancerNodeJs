@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, checkSchema } from 'express-validator';
 import { ObjectId } from 'mongodb';
+import { RoleType } from '~/constants/enum';
 import { httpStatus } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/models/Errors';
 import db from '~/services/databaseServices';
@@ -43,7 +44,7 @@ export const isAdminProjectValidator = validate(
             admin_id: new ObjectId(req.body.decodeAuthorization.payload.userId)
           });
 
-          if (!project) {
+          if (!project && req.body.decodeAuthorization.payload.role !== RoleType.Admin) {
             throw new ErrorWithStatus({
               status: httpStatus.FORBIDDEN,
               message: 'Người dùng không phải là admin của dự án này'

@@ -57,7 +57,8 @@ export const updateDisputeStatusController = async (
   req: Request<ParamsDictionary, any, ChangeStatusDisputeRequest>,
   res: Response
 ) => {
-  const dispute = await disputesService.changeStatusDispute(req.body);
+  const { id } = req.params;
+  const dispute = await disputesService.changeStatusDispute(id, req.body);
   res.status(200).json({
     message: 'Update dispute status success',
     result: dispute
@@ -84,5 +85,32 @@ export const getListDisputeController = async (
   res.status(200).json({
     message: 'Get list dispute success',
     result: disputes
+  });
+};
+
+export const payAllDisputeController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+  const dispute = await disputesService.payAllDispute(id, req.body);
+  res.status(200).json({
+    message: 'Pay all dispute success',
+    result: dispute
+  });
+};
+
+export const payOneDisputeController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+  const dispute = await disputesService.payOneDispute(id, req.body);
+  res.status(200).json({
+    message: 'Pay one dispute success',
+    result: dispute
+  });
+};
+
+export const notPayDisputeController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+  const dispute = await disputesService.notPayDispute(id, req.body);
+  res.status(200).json({
+    message: 'Not pay dispute success',
+    result: dispute
   });
 };
