@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ObjectId } from 'mongodb';
-import { HistoryAmountTypeEnum, StatusProject } from '~/constants/enum';
+import { HistoryAmountTypeEnum, InvitationType, StatusProject } from '~/constants/enum';
 import { httpStatus } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/models/Errors';
 import {
@@ -41,6 +41,16 @@ export const getAllProjectsController = async (
   res.status(200).json({
     result,
     message: 'Get Projects suscess'
+  });
+};
+
+export const getListProjectRecruitingController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const result = await db.projects
+    .find({ admin_id: new ObjectId(req.body.decodeAuthorization.payload.userId), status: StatusProject.Recruiting })
+    .toArray();
+  res.status(200).json({
+    result,
+    message: 'Get Projects Recruiting suscess'
   });
 };
 
@@ -437,5 +447,125 @@ export const payForMemberController = async (req: Request<ParamsDictionary, any,
   res.status(200).json({
     result,
     message: 'Thành công'
+  });
+};
+
+export const getListApplyController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const userId = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Get total count
+  const total = await db.applyInvitations.countDocuments({
+    user_id: userId,
+    type: InvitationType.Apply
+  });
+
+  // Get paginated results with related data
+  const result = await db.applyInvitations
+    .aggregate([
+      { $match: { user_id: userId, type: InvitationType.Apply } },
+      {
+        $lookup: {
+          from: 'Projects',
+          localField: 'project_id',
+          foreignField: '_id',
+          as: 'project'
+        }
+      },
+      { $unwind: '$project' },
+      {
+        $lookup: {
+          from: 'Technologies',
+          localField: 'project.technologies',
+          foreignField: '_id',
+          as: 'technologies'
+        }
+      },
+      {
+        $lookup: {
+          from: 'Fields',
+          localField: 'project.fields',
+          foreignField: '_id',
+          as: 'fields'
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ])
+    .toArray();
+
+  res.status(200).json({
+    message: 'Get list apply apply success',
+    result: {
+      applies: result,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+  });
+};
+
+export const getListInviteController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const userId = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Get total count
+  const total = await db.applyInvitations.countDocuments({
+    user_id: userId,
+    type: InvitationType.Invitation
+  });
+
+  // Get paginated results with related data
+  const result = await db.applyInvitations
+    .aggregate([
+      { $match: { user_id: userId, type: InvitationType.Invitation } },
+      {
+        $lookup: {
+          from: 'Projects',
+          localField: 'project_id',
+          foreignField: '_id',
+          as: 'project'
+        }
+      },
+      { $unwind: '$project' },
+      {
+        $lookup: {
+          from: 'Technologies',
+          localField: 'project.technologies',
+          foreignField: '_id',
+          as: 'technologies'
+        }
+      },
+      {
+        $lookup: {
+          from: 'Fields',
+          localField: 'project.fields',
+          foreignField: '_id',
+          as: 'fields'
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ])
+    .toArray();
+
+  res.status(200).json({
+    message: 'Get list apply invite success',
+    result: {
+      applies: result,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
   });
 };

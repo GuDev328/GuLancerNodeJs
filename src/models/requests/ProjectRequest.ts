@@ -63,6 +63,7 @@ export interface CreateTechRequest {
 
 export interface ApplyInviteRequest {
   decodeAuthorization: JwtPayload;
+  user_id: string;
   project_id: string;
   type: InvitationType;
   content: string;

@@ -9,6 +9,9 @@ import {
   getAllProjectsController,
   getApplyInviteController,
   getDetailProjectController,
+  getListApplyController,
+  getListInviteController,
+  getListProjectRecruitingController,
   getMarketController,
   getMemberController,
   getMyProgressController,
@@ -33,6 +36,7 @@ const router = Router();
 
 router.post('/create', accessTokenValidator, catchError(createProjectController));
 router.post('/get-all', accessTokenValidator, catchError(getAllProjectsController));
+router.get('/list-project-recruiting', accessTokenValidator, catchError(getListProjectRecruitingController));
 router.get('/get-detail-project/:id', accessTokenValidator, catchError(getDetailProjectController));
 router.post('/apply-invite', accessTokenValidator, catchError(applyInviteController));
 router.post('/get-apply-invite', accessTokenValidator, isAdminProjectValidator, catchError(getApplyInviteController));
@@ -50,10 +54,8 @@ router.get(
   isAdminProjectValidator,
   catchError(getOverviewProgress)
 );
-
 router.post('/escrow', accessTokenValidator, isAdminProjectValidator, catchError(escrowController));
 router.get('/get-market', catchError(getMarketController));
-
 router.post('/to-recruiting', accessTokenValidator, isAdminProjectValidator, catchError(toRecruitingController));
 router.post(
   '/recruiting-to-processing',
@@ -61,9 +63,11 @@ router.post(
   isAdminProjectValidator,
   catchError(toProcessingController)
 );
-
 router.post('/member-start-phase', accessTokenValidator, catchError(memberStartPhaseController));
 router.post('/member-done-phase', accessTokenValidator, catchError(memberDonePhaseController));
 router.post('/pay-for-member', accessTokenValidator, isAdminProjectValidator, catchError(payForMemberController));
+
+router.get('/list-apply', accessTokenValidator, catchError(getListApplyController));
+router.get('/list-invite', accessTokenValidator, catchError(getListInviteController));
 
 export default router;

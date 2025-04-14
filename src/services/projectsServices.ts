@@ -325,7 +325,7 @@ class ProjectsService {
   }
 
   async applyInvite(payload: ApplyInviteRequest) {
-    const user_id = new ObjectId(payload.decodeAuthorization.payload.userId);
+    const user_id = new ObjectId(payload.user_id) || new ObjectId(payload.decodeAuthorization.payload.userId);
     const project_id = new ObjectId(payload.project_id);
 
     const project = await db.projects.findOne({
@@ -386,6 +386,13 @@ class ProjectsService {
         status: httpStatus.BAD_REQUEST
       });
     }
+    const project = await db.projects.findOne({ _id: applyInvite.project_id });
+    if (project?.status !== StatusProject.Recruiting)
+      throw new ErrorWithStatus({
+        message: 'Dự án đã hết thời gian tuyển dụng',
+        code: 'PROJECT_NOT_IN_RECRUITING',
+        status: httpStatus.BAD_REQUEST
+      });
 
     if (applyInvite.type === InvitationType.Apply) {
       const project = await db.projects.findOne({
@@ -406,7 +413,7 @@ class ProjectsService {
         });
       }
     } else {
-      if (user_id !== applyInvite.user_id) {
+      if (user_id.toString() !== applyInvite.user_id.toString()) {
         throw new ErrorWithStatus({
           message: 'Bạn không có quyền chấp nhận lời mời này',
           code: 'NOT_PERMISSION',
