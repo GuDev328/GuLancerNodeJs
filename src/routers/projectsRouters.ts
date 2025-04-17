@@ -4,6 +4,8 @@ import {
   applyInviteController,
   bookmarkController,
   createProjectController,
+  detailApplyInviteController,
+  editApplyInviteController,
   EditMyProgressController,
   escrowController,
   getAllProjectsController,
@@ -39,7 +41,9 @@ router.post('/get-all', accessTokenValidator, catchError(getAllProjectsControlle
 router.get('/list-project-recruiting', accessTokenValidator, catchError(getListProjectRecruitingController));
 router.get('/get-detail-project/:id', accessTokenValidator, catchError(getDetailProjectController));
 router.post('/apply-invite', accessTokenValidator, catchError(applyInviteController));
+router.post('/edit-apply-invite', accessTokenValidator, catchError(editApplyInviteController));
 router.post('/get-apply-invite', accessTokenValidator, isAdminProjectValidator, catchError(getApplyInviteController));
+router.get('/detail-apply-invite/:id', accessTokenValidator, catchError(detailApplyInviteController));
 router.post('/reject-apply-invite', accessTokenValidator, catchError(rejectApplyInviteController));
 router.post('/accept-apply-invite', accessTokenValidator, catchError(acceptApplyInviteController));
 router.get('/get-member/:id', accessTokenValidator, catchError(getMemberController));

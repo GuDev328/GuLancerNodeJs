@@ -5,6 +5,7 @@ import {
   ApplyInviteRequest,
   BookmarkRequest,
   CreateProjectRequest,
+  EditApplyInviteRequest,
   EditMyProgressRequest,
   EscrowRequest,
   GetAllProjectRequest,
@@ -60,7 +61,6 @@ class ProjectsService {
       title: payload.title,
       status: StatusProject.NotReady,
       admin_id: user_id,
-      salary: Number(payload.salary),
       salaryType: payload.salaryType,
       description: payload.description,
       technologies: techsFinds,
@@ -127,7 +127,7 @@ class ProjectsService {
       payload.orderBy === ProjectOrderBy.CreatedAt
         ? { created_at: -1 }
         : payload.orderBy === ProjectOrderBy.Salary
-          ? { salary: -1 }
+          ? { 'recruitmentInfo.salary': -1 }
           : payload.orderBy === ProjectOrderBy.StarEmployer
             ? { 'user.star': -1 }
             : payload.orderBy === ProjectOrderBy.ProjectDoneEmployer
@@ -204,11 +204,11 @@ class ProjectsService {
             {
               ...(payload.salaryType ? { salaryType: payload.salaryType } : {}),
               ...(payload.salaryFrom != null && payload.salaryTo != null
-                ? { salary: { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
+                ? { 'recruitmentInfo.salary': { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
                 : payload.salaryFrom != null
-                  ? { salary: { $gte: payload.salaryFrom } }
+                  ? { 'recruitmentInfo.salary': { $gte: payload.salaryFrom } }
                   : payload.salaryTo != null
-                    ? { salary: { $lte: payload.salaryTo } }
+                    ? { 'recruitmentInfo.salary': { $lte: payload.salaryTo } }
                     : {})
             }
           ]
@@ -231,11 +231,11 @@ class ProjectsService {
               ...(techsId?.length ? { technologies: { $elemMatch: { $in: techsId } } } : null),
               ...(payload.salaryType ? { salaryType: payload.salaryType } : {}),
               ...(payload.salaryFrom != null && payload.salaryTo != null
-                ? { salary: { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
+                ? { 'recruitmentInfo.salary': { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
                 : payload.salaryFrom != null
-                  ? { salary: { $gte: payload.salaryFrom } }
+                  ? { 'recruitmentInfo.salary': { $gte: payload.salaryFrom } }
                   : payload.salaryTo != null
-                    ? { salary: { $lte: payload.salaryTo } }
+                    ? { 'recruitmentInfo.salary': { $lte: payload.salaryTo } }
                     : {})
             }
           ]
@@ -260,11 +260,11 @@ class ProjectsService {
               ...(fieldsId?.length ? { fields: { $elemMatch: { $in: fieldsId } } } : null),
               ...(payload.salaryType ? { salaryType: payload.salaryType } : {}),
               ...(payload.salaryFrom != null && payload.salaryTo != null
-                ? { salary: { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
+                ? { 'recruitmentInfo.salary': { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
                 : payload.salaryFrom != null
-                  ? { salary: { $gte: payload.salaryFrom } }
+                  ? { 'recruitmentInfo.salary': { $gte: payload.salaryFrom } }
                   : payload.salaryTo != null
-                    ? { salary: { $lte: payload.salaryTo } }
+                    ? { 'recruitmentInfo.salary': { $lte: payload.salaryTo } }
                     : {})
             }
           ]
@@ -283,11 +283,11 @@ class ProjectsService {
               ...(techsId?.length ? { technologies: { $elemMatch: { $in: techsId } } } : null),
               ...(payload.salaryType ? { salaryType: payload.salaryType } : {}),
               ...(payload.salaryFrom != null && payload.salaryTo != null
-                ? { salary: { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
+                ? { 'recruitmentInfo.salary': { $gte: payload.salaryFrom, $lte: payload.salaryTo } }
                 : payload.salaryFrom != null
-                  ? { salary: { $gte: payload.salaryFrom } }
+                  ? { 'recruitmentInfo.salary': { $gte: payload.salaryFrom } }
                   : payload.salaryTo != null
-                    ? { salary: { $lte: payload.salaryTo } }
+                    ? { 'recruitmentInfo.salary': { $lte: payload.salaryTo } }
                     : {})
             }
           ]
@@ -325,7 +325,9 @@ class ProjectsService {
   }
 
   async applyInvite(payload: ApplyInviteRequest) {
-    const user_id = new ObjectId(payload.user_id) || new ObjectId(payload.decodeAuthorization.payload.userId);
+    const user_id = payload.user_id
+      ? new ObjectId(payload.user_id)
+      : new ObjectId(payload.decodeAuthorization.payload.userId);
     const project_id = new ObjectId(payload.project_id);
 
     const project = await db.projects.findOne({
@@ -366,10 +368,42 @@ class ProjectsService {
       project_id,
       type: payload.type,
       content: payload.content,
-      salary: payload.salary ? payload.salary : project.salary,
+      salary: payload.salary ? payload.salary : project.recruitmentInfo.salary,
       time_to_complete: payload.time_to_complete ? new Date(payload.time_to_complete) : project.end_date
     });
     return await db.applyInvitations.insertOne(applyInvite);
+  }
+
+  async editApplyInvite(payload: EditApplyInviteRequest) {
+    const apply_invite_id = new ObjectId(payload.apply_invite_id);
+    const applyInvite = await db.applyInvitations.findOne({
+      _id: apply_invite_id
+    });
+    if (!applyInvite) {
+      throw new ErrorWithStatus({
+        message: 'Invite không tồn tại',
+        code: 'APPLY_INVITE_NOT_FOUND',
+        status: httpStatus.BAD_REQUEST
+      });
+    }
+    const project = await db.projects.findOne({ _id: applyInvite.project_id });
+    if (project?.status !== StatusProject.Recruiting)
+      throw new ErrorWithStatus({
+        message: 'Dự án đã hết thời gian tuyển dụng',
+        code: 'PROJECT_NOT_IN_RECRUITING',
+        status: httpStatus.BAD_REQUEST
+      });
+    applyInvite.content = payload.content;
+    applyInvite.salary = payload.salary ? payload.salary : project.recruitmentInfo.salary;
+    applyInvite.time_to_complete = payload.time_to_complete ? new Date(payload.time_to_complete) : project.end_date;
+    return await db.applyInvitations.updateOne(
+      {
+        _id: apply_invite_id
+      },
+      {
+        $set: applyInvite
+      }
+    );
   }
 
   async acceptApplyInvite(payload: AcceptApplyInviteRequest) {
@@ -544,6 +578,11 @@ class ProjectsService {
     };
 
     return response;
+  }
+
+  async detailApplyInvite(apply_invite_id: ObjectId) {
+    const result = await db.applyInvitations.findOne({ _id: apply_invite_id });
+    return result;
   }
 
   async rejectApplyInvite(payload: AcceptApplyInviteRequest) {

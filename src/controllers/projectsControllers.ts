@@ -9,6 +9,7 @@ import {
   ApplyInviteRequest,
   BookmarkRequest,
   CreateProjectRequest,
+  EditApplyInviteRequest,
   EditMyProgressRequest,
   EscrowRequest,
   GetAllProjectRequest,
@@ -61,6 +62,16 @@ export const applyInviteController = async (req: Request<ParamsDictionary, any, 
   });
 };
 
+export const editApplyInviteController = async (
+  req: Request<ParamsDictionary, any, EditApplyInviteRequest>,
+  res: Response
+) => {
+  await projectsService.editApplyInvite(req.body);
+  res.status(200).json({
+    message: 'Edit Apply Invite suscess'
+  });
+};
+
 export const getApplyInviteController = async (
   req: Request<ParamsDictionary, any, GetApplyInviteRequest>,
   res: Response
@@ -69,6 +80,15 @@ export const getApplyInviteController = async (
   res.status(200).json({
     result,
     message: 'Lấy danh sách thành công'
+  });
+};
+
+export const detailApplyInviteController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const apply_invite_id = new ObjectId(req.params.id);
+  const result = await projectsService.detailApplyInvite(apply_invite_id);
+  res.status(200).json({
+    result,
+    message: 'Lấy thông tin thành công'
   });
 };
 
@@ -307,15 +327,16 @@ export const escrowController = async (req: Request<ParamsDictionary, any, Escro
 };
 
 export const toRecruitingController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
-  const { project_id, number_people, deadline } = req.body;
+  const { project_id, number_people, deadline, salary } = req.body;
   const result = await db.projects.findOneAndUpdate(
-    { _id: new ObjectId(req.body.project_id) },
+    { _id: new ObjectId(project_id) },
     {
       $set: {
         status: StatusProject.Recruiting,
         recruitmentInfo: {
           number_people: Number(number_people),
-          deadline: new Date(deadline)
+          deadline: new Date(deadline),
+          salary: Number(salary)
         }
       }
     }
@@ -455,7 +476,6 @@ export const getListApplyController = async (req: Request<ParamsDictionary, any,
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
   const skip = (page - 1) * limit;
-
   // Get total count
   const total = await db.applyInvitations.countDocuments({
     user_id: userId,

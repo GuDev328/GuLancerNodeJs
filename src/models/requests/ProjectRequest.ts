@@ -40,7 +40,6 @@ export interface CreateProjectRequest {
   fields: string[];
   technologies: string[];
   salaryType: SalaryType;
-  salary: number;
   description: string;
   endDate: Date;
   startDate: Date;
@@ -66,6 +65,14 @@ export interface ApplyInviteRequest {
   user_id: string;
   project_id: string;
   type: InvitationType;
+  content: string;
+  salary: number;
+  time_to_complete: number; //số ngày dự kiến hoàn thành dự án
+}
+
+export interface EditApplyInviteRequest {
+  decodeAuthorization: JwtPayload;
+  apply_invite_id: string;
   content: string;
   salary: number;
   time_to_complete: number; //số ngày dự kiến hoàn thành dự án
