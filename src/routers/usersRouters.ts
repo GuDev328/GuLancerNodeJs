@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  blockAccountController,
   changePasswordController,
   deleteAccountController,
   followController,
@@ -20,6 +21,7 @@ import {
   registerController,
   requestVerifyController,
   resetPasswordController,
+  unblockAccountController,
   unfollowController,
   updateMeController
 } from '~/controllers/usersControllers';
@@ -90,6 +92,8 @@ router.get('/profile/:id', catchError(getProfileByIDController));
 
 router.post('/list', accessTokenValidator, catchError(getListAccount));
 router.post('/delete', accessTokenValidator, isAdminValidator, catchError(deleteAccountController));
+router.post('/block', accessTokenValidator, isAdminValidator, catchError(blockAccountController));
+router.post('/unblock', accessTokenValidator, isAdminValidator, catchError(unblockAccountController));
 router.post('/request-verify', accessTokenValidator, catchError(requestVerifyController));
 
 router.post('/list-request-verify', accessTokenValidator, isAdminValidator, catchError(getListRequestVerifyController));

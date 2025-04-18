@@ -361,6 +361,8 @@ export const toProcessingController = async (req: Request<ParamsDictionary, any,
     { $set: { status: isAllMemberNotReady ? StatusProject.PendingMemberReady : StatusProject.Processing } }
   );
 
+  await db.applyInvitations.deleteMany({ project_id: new ObjectId(req.body.project_id) });
+
   res.status(200).json({
     result,
     message: 'Thành công'

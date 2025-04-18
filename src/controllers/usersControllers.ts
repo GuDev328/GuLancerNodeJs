@@ -27,6 +27,8 @@ import {
 import userService from '~/services/usersServices';
 import { DecodeAuthorization } from '~/models/requests/GroupRequest';
 import { ObjectId } from 'mongodb';
+import db from '~/services/databaseServices';
+import { AccountStatus } from '~/constants/enum';
 
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequest>, res: Response) => {
   const result = await userService.login(req.body);
@@ -210,6 +212,24 @@ export const deleteAccountController = async (req: Request<ParamsDictionary, any
   res.status(200).json({
     result,
     message: 'Xoá thành công'
+  });
+};
+
+export const blockAccountController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.body;
+  const result = await db.users.updateOne({ _id: new ObjectId(id) }, { $set: { status: AccountStatus.Blocked } });
+  res.status(200).json({
+    result,
+    message: 'Khóa tài khoản thành công'
+  });
+};
+
+export const unblockAccountController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.body;
+  const result = await db.users.updateOne({ _id: new ObjectId(id) }, { $set: { status: AccountStatus.Active } });
+  res.status(200).json({
+    result,
+    message: 'Mở khóa tài khoản thành công'
   });
 };
 
