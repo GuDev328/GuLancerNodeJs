@@ -8,6 +8,7 @@ import {
 } from '~/models/requests/TaskRequest';
 import Task from '~/models/schemas/TaskSchema';
 import { TaskStatus } from '~/constants/enum';
+import { lookupUser } from '~/utils/lookup';
 
 class TaskService {
   constructor() {}
@@ -69,12 +70,7 @@ class TaskService {
           $match: query
         },
         {
-          $lookup: {
-            from: 'Users',
-            localField: 'assign_to',
-            foreignField: '_id',
-            as: 'assign_to_info'
-          }
+          ...lookupUser('assign_to', 'assign_to_info')
         },
         {
           $skip: (page - 1) * limit
@@ -102,20 +98,10 @@ class TaskService {
           }
         },
         {
-          $lookup: {
-            from: 'Users',
-            localField: 'assign_to',
-            foreignField: '_id',
-            as: 'assign_to_info'
-          }
+          ...lookupUser('assign_to', 'assign_to_info')
         },
         {
-          $lookup: {
-            from: 'Users',
-            localField: 'created_by',
-            foreignField: '_id',
-            as: 'created_by_info'
-          }
+          ...lookupUser('created_by', 'created_by_info')
         },
         {
           $lookup: {

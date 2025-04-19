@@ -29,6 +29,7 @@ import ApplyInvitation from '~/models/schemas/ApplyInvitation';
 import MemberProject from '~/models/schemas/MemberProject';
 import HistoryAmount from '~/models/schemas/HistoryAmountSchema';
 import { DateVi } from '~/utils/date-vi';
+import { lookupUser } from '~/utils/lookup';
 
 class ProjectsService {
   constructor() {}
@@ -135,14 +136,8 @@ class ProjectsService {
               : { created_at: -1 };
 
     const commonQuery = [
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'admin_id',
-          foreignField: '_id',
-          as: 'user'
-        }
-      },
+      ...lookupUser('admin_id', 'user'),
+
       {
         $lookup: {
           from: 'Technologies',
@@ -485,14 +480,7 @@ class ProjectsService {
               ]
             }
           },
-          {
-            $lookup: {
-              from: 'Users',
-              localField: 'admin_id',
-              foreignField: '_id',
-              as: 'admin_info'
-            }
-          },
+          ...lookupUser('admin_id', 'admin_info'),
           {
             $skip: (page - 1) * limit
           },
@@ -530,14 +518,7 @@ class ProjectsService {
         {
           $match: { project_id }
         },
-        {
-          $lookup: {
-            from: 'Users',
-            localField: 'user_id',
-            foreignField: '_id',
-            as: 'user_info'
-          }
-        },
+        ...lookupUser('user_id'),
         {
           $facet: {
             metadata: [{ $count: 'total' }],
@@ -716,14 +697,7 @@ class ProjectsService {
             project_id
           }
         },
-        {
-          $lookup: {
-            from: 'Users',
-            localField: 'user_id',
-            foreignField: '_id',
-            as: 'user_info'
-          }
-        },
+        ...lookupUser('user_id'),
         {
           $lookup: {
             from: 'Projects',

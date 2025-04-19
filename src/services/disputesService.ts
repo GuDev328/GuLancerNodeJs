@@ -22,6 +22,7 @@ import { httpStatus } from '~/constants/httpStatus';
 import { JwtPayload } from 'jsonwebtoken';
 import HistoryAmount from '~/models/schemas/HistoryAmountSchema';
 import { DateVi } from '~/utils/date-vi';
+import { lookupUser } from '~/utils/lookup';
 
 class DisputeService {
   constructor() {}
@@ -172,52 +173,10 @@ class DisputeService {
         {
           $lookup: { from: 'Projects', localField: 'project_id', foreignField: '_id', as: 'project_info' }
         },
-
-        {
-          $lookup: { from: 'Users', localField: 'employer_id', foreignField: '_id', as: 'employer_info' }
-        },
-        {
-          $lookup: {
-            from: 'Users',
-            localField: 'freelancer_id',
-            foreignField: '_id',
-            as: 'freelancer_info'
-          }
-        },
+        ...lookupUser('employer_id', 'employer_info'),
+        ...lookupUser('freelancer_id', 'freelancer_info'),
         {
           $unwind: '$project_info'
-        },
-        {
-          $unwind: '$employer_info'
-        },
-        {
-          $unwind: '$freelancer_info'
-        },
-        {
-          $project: {
-            employer_info: {
-              password: 0,
-              forgot_password_token: 0,
-              amount: 0,
-              verify_code: 0,
-              verified_info: {
-                img_front: 0,
-                img_back: 0,
-                vid_portrait: 0
-              }
-            },
-            freelancer_info: {
-              password: 0,
-              forgot_password_token: 0,
-              amount: 0,
-              verify_code: 0,
-              verified_info: {
-                img_front: 0,
-                img_back: 0,
-                vid_portrait: 0
-              }
-            }
-          }
         }
       ])
       .toArray();
@@ -283,51 +242,11 @@ class DisputeService {
           as: 'project_info'
         }
       },
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'freelancer_id',
-          foreignField: '_id',
-          as: 'freelancer_info'
-        }
-      },
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'employer_id',
-          foreignField: '_id',
-          as: 'employer_info'
-        }
-      },
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'solver_id',
-          foreignField: '_id',
-          as: 'solver_info'
-        }
-      },
+      ...lookupUser('freelancer_id', 'freelancer_info'),
+      ...lookupUser('employer_id', 'employer_info'),
       {
         $unwind: {
           path: '$project_info',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $unwind: {
-          path: '$freelancer_info',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $unwind: {
-          path: '$employer_info',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $unwind: {
-          path: '$solver_info',
           preserveNullAndEmptyArrays: true
         }
       }

@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { DateVi } from '~/utils/date-vi';
 import { ErrorWithStatus } from '~/models/Errors';
 import UserConversation from '~/models/schemas/UserConversation';
+import { lookupUser } from '~/utils/lookup';
 
 class ConversationsService {
   constructor() {}
@@ -52,22 +53,8 @@ class ConversationsService {
             $or: [{ user_id_1: new ObjectId(userId) }, { user_id_2: new ObjectId(userId) }]
           }
         },
-        {
-          $lookup: {
-            from: 'Users',
-            localField: 'user_id_1',
-            foreignField: '_id',
-            as: 'user_1_info'
-          }
-        },
-        {
-          $lookup: {
-            from: 'Users',
-            localField: 'user_id_2',
-            foreignField: '_id',
-            as: 'user_2_info'
-          }
-        },
+        ...lookupUser('user_id_1', 'user_1_info'),
+        ...lookupUser('user_id_2', 'user_2_info'),
         {
           $sort: {
             'last_message.time': -1
@@ -124,14 +111,7 @@ class ConversationsService {
         {
           $limit: limit
         },
-        {
-          $lookup: {
-            from: 'Users', // Tên collection cần join
-            localField: 'sender_id', // Field trong conversations
-            foreignField: '_id', // Field trong users
-            as: 'sender_info' // Tên field cho dữ liệu join
-          }
-        }
+        ...lookupUser('sender_id', 'sender_info')
       ])
       .toArray();
 
@@ -163,14 +143,7 @@ class ConversationsService {
         {
           $limit: limit
         },
-        {
-          $lookup: {
-            from: 'Users',
-            localField: 'sender_id',
-            foreignField: '_id',
-            as: 'sender_info'
-          }
-        }
+        ...lookupUser('sender_id', 'sender_info')
       ])
       .toArray();
 

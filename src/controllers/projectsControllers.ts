@@ -21,6 +21,7 @@ import db from '~/services/databaseServices';
 import projectsService from '~/services/projectsServices';
 import bookmarksService from '~/services/projectsServices';
 import { DateVi } from '~/utils/date-vi';
+import { lookupUser } from '~/utils/lookup';
 
 export const createProjectController = async (
   req: Request<ParamsDictionary, any, CreateProjectRequest>,
@@ -101,14 +102,7 @@ export const getDetailProjectController = async (req: Request<ParamsDictionary, 
           _id: new ObjectId(projectId)
         }
       },
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'admin_id',
-          foreignField: '_id',
-          as: 'admin_info'
-        }
-      },
+      ...lookupUser('admin_id', 'admin_info'),
       {
         $lookup: {
           from: 'Technologies',
@@ -153,14 +147,7 @@ export const getMemberController = async (req: Request<ParamsDictionary, any, an
           project_id: new ObjectId(projectId)
         }
       },
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'user_id',
-          foreignField: '_id',
-          as: 'user_info'
-        }
-      },
+      ...lookupUser('user_id'),
       {
         $project: {
           'user_info.password': 0,
@@ -235,14 +222,7 @@ export const getMyProgressController = async (req: Request<ParamsDictionary, any
           user_id: new ObjectId(req.body.decodeAuthorization.payload.userId)
         }
       },
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'user_id',
-          foreignField: '_id',
-          as: 'user_info'
-        }
-      },
+      ...lookupUser('user_id'),
       {
         $lookup: {
           from: 'Projects',

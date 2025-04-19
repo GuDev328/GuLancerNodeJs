@@ -9,6 +9,7 @@ import Like from '~/models/schemas/LikeSchema';
 import { LikeRequest } from '~/models/requests/LikeRequest';
 import { DateVi } from '~/utils/date-vi';
 import { update } from 'lodash';
+import { lookupUser } from '~/utils/lookup';
 
 class TweetsService {
   constructor() {}
@@ -60,14 +61,6 @@ class TweetsService {
               localField: 'group_id',
               foreignField: '_id',
               as: 'group'
-            }
-          },
-          {
-            $lookup: {
-              from: 'Users',
-              localField: 'mentions',
-              foreignField: '_id',
-              as: 'mentions'
             }
           },
           {
@@ -227,22 +220,7 @@ class TweetsService {
             as: 'group'
           }
         },
-        {
-          $lookup: {
-            from: 'Users',
-            localField: 'mentions',
-            foreignField: '_id',
-            as: 'mentions'
-          }
-        },
-        {
-          $lookup: {
-            from: 'Users',
-            localField: 'user_id',
-            foreignField: '_id',
-            as: 'user'
-          }
-        },
+        ...lookupUser('user_id', 'user'),
         {
           $addFields: {
             mentions: {
@@ -364,14 +342,7 @@ class TweetsService {
               }
             }
           },
-          {
-            $lookup: {
-              from: 'Users',
-              localField: 'user_id',
-              foreignField: '_id',
-              as: 'user'
-            }
-          },
+          ...lookupUser('user_id', 'user'),
           {
             $lookup: {
               from: 'Groups',
@@ -383,15 +354,6 @@ class TweetsService {
           {
             $unwind: {
               path: '$user'
-            }
-          },
-
-          {
-            $lookup: {
-              from: 'Users',
-              localField: 'mentions',
-              foreignField: '_id',
-              as: 'mentions'
             }
           },
           {
@@ -532,14 +494,7 @@ class TweetsService {
               type: TweetTypeEnum.Tweet
             }
           },
-          {
-            $lookup: {
-              from: 'Users',
-              localField: 'user_id',
-              foreignField: '_id',
-              as: 'user'
-            }
-          },
+          ...lookupUser('user_id', 'user'),
           {
             $lookup: {
               from: 'Groups',
@@ -551,15 +506,6 @@ class TweetsService {
           {
             $unwind: {
               path: '$user'
-            }
-          },
-
-          {
-            $lookup: {
-              from: 'Users',
-              localField: 'mentions',
-              foreignField: '_id',
-              as: 'mentions'
             }
           },
           {
