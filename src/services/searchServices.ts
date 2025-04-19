@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { RoleType, TweetTypeEnum } from '~/constants/enum';
+import { MemberStatus, RoleType, TweetTypeEnum } from '~/constants/enum';
 import db from './databaseServices';
 import Tweet from '~/models/schemas/TweetSchema';
 import { DateVi } from '~/utils/date-vi';
@@ -50,7 +50,15 @@ class SearchServices {
                   10 // Nếu không có bản ghi phù hợp, mặc định là 10
                 ]
               },
-              member_count: { $size: '$members' }
+              member_count: {
+                $size: {
+                  $filter: {
+                    input: '$members',
+                    as: 'member',
+                    cond: { $eq: ['$$member.status', MemberStatus.Accepted] }
+                  }
+                }
+              }
             }
           },
           {

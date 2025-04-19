@@ -11,6 +11,7 @@ interface TweetType {
   parent_id: null | ObjectId; //  chỉ null khi tweet gốc
   mentions: ObjectId[];
   medias: Media[];
+  censor: boolean;
   views?: number;
   created_at?: Date;
   updated_at?: Date;
@@ -25,6 +26,7 @@ export default class Tweet {
   parent_id: null | ObjectId; //  chỉ null khi tweet gốc
   mentions: ObjectId[];
   medias: Media[];
+  censor: boolean;
   views: number;
   created_at: Date;
   updated_at: Date;
@@ -39,6 +41,7 @@ export default class Tweet {
     this.mentions = tweet.mentions || [];
     this.medias = tweet.medias || [];
     this.views = 0;
+    this.censor = tweet.censor || true;
     this.created_at = tweet.created_at || DateVi();
     this.updated_at = tweet.updated_at || DateVi();
   }

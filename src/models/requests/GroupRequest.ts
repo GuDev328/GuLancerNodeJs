@@ -9,6 +9,16 @@ export interface CreateGroupRequest {
   cover_photo: string;
 }
 
+export interface EditGroupRequest {
+  decodeAuthorization: JwtPayload;
+  group_id: string;
+  name: string;
+  censor: boolean;
+  type: GroupTypes;
+  description: string;
+  cover_photo: string;
+}
+
 export interface DecodeAuthorization {
   decodeAuthorization: JwtPayload;
 }

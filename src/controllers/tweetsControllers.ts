@@ -14,8 +14,7 @@ import tweetsService from '~/services/tweetsServices';
 export const createTweetController = async (req: Request<ParamsDictionary, any, TweetRequest>, res: Response) => {
   const result = await tweetsService.createNewTweet(req.body);
   res.status(200).json({
-    result,
-    message: 'Create new tweet suscess'
+    message: !result ? 'Bài viết đã được gửi chờ kiểm duyệt' : 'Đăng tải bài viết thành công'
   });
 };
 

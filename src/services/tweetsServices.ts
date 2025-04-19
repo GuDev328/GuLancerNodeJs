@@ -14,6 +14,13 @@ class TweetsService {
   constructor() {}
 
   async createNewTweet(payload: TweetRequest) {
+    const group = await db.groups.findOne({ _id: new ObjectId(payload.group_id) });
+    if (!group) {
+      throw new ErrorWithStatus({
+        message: 'Group not found',
+        status: httpStatus.NOT_FOUND
+      });
+    }
     const tweet = new Tweet({
       group_id: new ObjectId(payload.group_id),
       user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
@@ -22,10 +29,11 @@ class TweetsService {
       parent_id: payload.parent_id ? new ObjectId(payload.parent_id) : null, //  chỉ null khi tweet gốc
       mentions: payload.mentions.map((tag) => new ObjectId(tag)),
       medias: payload.medias,
-      views: 0
+      views: 0,
+      censor: !group.censor
     });
     const createTweet = await db.tweets.insertOne(tweet);
-    return createTweet.insertedId;
+    return !group.censor;
   }
 
   async increaseViews(payload: getTweetRequest) {
