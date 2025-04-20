@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { MemberStatus, RoleType, TweetTypeEnum } from '~/constants/enum';
+import { MemberStatus, RoleType, TweetTypeEnum, VerifyStatus } from '~/constants/enum';
 import db from './databaseServices';
 import Tweet from '~/models/schemas/TweetSchema';
 import { DateVi } from '~/utils/date-vi';
@@ -160,6 +160,15 @@ class SearchServices {
 
     const commonQuery = [
       {
+        $match: {
+          ...(typeof payload.verified !== 'undefined'
+            ? {
+                'verified_info.status': payload.verified ? VerifyStatus.Approved : { $ne: VerifyStatus.Approved }
+              }
+            : {})
+        }
+      },
+      {
         $lookup: {
           from: 'Technologies',
           localField: 'technologies',
@@ -232,6 +241,8 @@ class SearchServices {
         }
       }
     ];
+
+    console.log(commonQuery);
 
     const queryNoTechField = [
       {

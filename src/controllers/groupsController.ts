@@ -78,6 +78,16 @@ export const joinGroupController = async (req: Request<ParamsDictionary, any, Gr
   });
 };
 
+export const leaveGroupController = async (req: Request<ParamsDictionary, any, GroupID>, res: Response) => {
+  const group_id = new ObjectId(req.params.id);
+  const user_id = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const result = await db.members.deleteOne({ group_id, user_id });
+  res.status(200).json({
+    result,
+    message: 'Rời cộng đồng thành công'
+  });
+};
+
 export const deleteGroupController = async (req: Request<ParamsDictionary, any, GroupID>, res: Response) => {
   const group_id = new ObjectId(req.params.id);
   await db.groups.deleteOne({ _id: group_id });

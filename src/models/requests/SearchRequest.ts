@@ -17,4 +17,5 @@ export interface SearchFreelancerRequest {
   salaryFrom?: number;
   salaryTo?: number;
   orderBy?: FreelancerOrderBy;
+  verified?: boolean;
 }

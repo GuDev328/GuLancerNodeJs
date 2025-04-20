@@ -69,9 +69,9 @@ class TaskService {
         {
           $match: query
         },
-        {
-          ...lookupUser('assign_to', 'assign_to_info')
-        },
+
+        ...lookupUser('assign_to', 'assign_to_info'),
+
         {
           $skip: (page - 1) * limit
         },
