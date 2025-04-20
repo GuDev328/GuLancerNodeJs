@@ -23,7 +23,6 @@ interface UserType {
   role: RoleType;
   technologies?: ObjectId[];
   project_done?: number;
-  star?: number;
   fields?: ObjectId[];
   gender?: GenderEnum;
   status?: AccountStatus;
@@ -58,7 +57,6 @@ export default class User {
   role: RoleType;
   technologies: ObjectId[];
   project_done: number;
-  star: number;
   fields: ObjectId[];
   gender: GenderEnum;
   status: AccountStatus;
@@ -89,7 +87,6 @@ export default class User {
     this.role = user.role || RoleType.Freelancer;
     this.technologies = user.technologies || [];
     this.project_done = 0;
-    this.star = 5;
     this.fields = user.fields || [];
     this.status = user.status || AccountStatus.Active;
     this.verified_info = user.verified_info || {

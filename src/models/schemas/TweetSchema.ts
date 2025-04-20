@@ -41,7 +41,7 @@ export default class Tweet {
     this.mentions = tweet.mentions || [];
     this.medias = tweet.medias || [];
     this.views = 0;
-    this.censor = tweet.censor || true;
+    this.censor = tweet.censor;
     this.created_at = tweet.created_at || DateVi();
     this.updated_at = tweet.updated_at || DateVi();
   }

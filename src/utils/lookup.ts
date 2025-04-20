@@ -31,7 +31,7 @@ export const lookupUser = (localField: string, asName: string = 'user_info') => 
   {
     $addFields: {
       [`${asName}.star`]: {
-        $ifNull: [{ $arrayElemAt: ['$evaluations.averageStar', 0] }, 5]
+        $toDecimal: { $ifNull: [{ $arrayElemAt: ['$evaluations.averageStar', 0] }, 5.0] }
       }
     }
   },

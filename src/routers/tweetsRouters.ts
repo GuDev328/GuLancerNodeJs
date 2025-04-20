@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import {
+  approveTweetsController,
   createTweetController,
   getNewsFeedController,
   getPostsByGroupIdController,
   getTweetChildrenController,
   getTweetController,
   likeController,
+  rejectTweetsController,
   unlikeController
 } from '~/controllers/tweetsControllers';
 import {
@@ -36,5 +38,8 @@ router.get('/group/:id', getNewsFeedValidator, accessTokenValidator, catchError(
 
 router.post('/like', accessTokenValidator, likeValidator, catchError(likeController));
 router.post('/unlike', accessTokenValidator, likeValidator, catchError(unlikeController));
+
+router.put('/approve/:id', accessTokenValidator, catchError(approveTweetsController));
+router.put('/reject/:id', accessTokenValidator, catchError(rejectTweetsController));
 
 export default router;

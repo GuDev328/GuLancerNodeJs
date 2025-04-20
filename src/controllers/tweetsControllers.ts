@@ -67,9 +67,11 @@ export const getNewsFeedController = async (req: Request<ParamsDictionary, any, 
 export const getPostsByGroupIdController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const limit = Number(req.query.limit as string);
   const page = Number(req.query.page as string);
+  const censor = req.query.censor === 'true';
+  console.log(req.query.censor, censor);
   const group_id = req.params.id;
   const user_id = req.body.decodeAuthorization.payload.userId;
-  const { total_page, result } = await tweetsService.getPostsByGroupId(group_id, user_id, limit, page);
+  const { total_page, result } = await tweetsService.getPostsByGroupId(group_id, user_id, limit, page, censor);
   res.status(200).json({
     result,
     total_page,
@@ -89,5 +91,21 @@ export const unlikeController = async (req: Request<ParamsDictionary, any, LikeR
   await tweetsService.unlike(req.body);
   res.status(200).json({
     message: 'Unlike suscess'
+  });
+};
+
+export const approveTweetsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const tweet_id = req.params.id;
+  await db.tweets.updateOne({ _id: new ObjectId(tweet_id) }, { $set: { censor: true } });
+  res.status(200).json({
+    message: 'Kiểm duyệt bài viết thành công'
+  });
+};
+
+export const rejectTweetsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const tweet_id = req.params.id;
+  await db.tweets.deleteOne({ _id: new ObjectId(tweet_id) });
+  res.status(200).json({
+    message: 'Từ chối bài viết thành công'
   });
 };

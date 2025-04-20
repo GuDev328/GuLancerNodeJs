@@ -22,6 +22,18 @@ class TweetsService {
         status: httpStatus.NOT_FOUND
       });
     }
+
+    const member = await db.members.findOne({
+      group_id: new ObjectId(payload.group_id),
+      user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
+      status: MemberStatus.Accepted
+    });
+    if (!member)
+      throw new ErrorWithStatus({
+        message: 'Bạn không phải thành viên của cộng đồng này',
+        status: httpStatus.BAD_REQUEST
+      });
+
     const tweet = new Tweet({
       group_id: new ObjectId(payload.group_id),
       user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
@@ -337,6 +349,7 @@ class TweetsService {
           {
             $match: {
               type: TweetTypeEnum.Tweet,
+              censor: true,
               group_id: {
                 $in: listGroupId.map((groupId) => new ObjectId(groupId))
               }
@@ -444,6 +457,8 @@ class TweetsService {
         .aggregate([
           {
             $match: {
+              type: TweetTypeEnum.Tweet,
+              censor: true,
               group_id: {
                 $in: listGroupId.map((groupId) => new ObjectId(groupId))
               }
@@ -481,8 +496,20 @@ class TweetsService {
     return { total_page: Math.ceil(count[0]?.total / limit), result };
   }
 
-  async getPostsByGroupId(group_id: string, user_id: string, limit: number, page: number) {
+  async getPostsByGroupId(group_id: string, user_id: string, limit: number, page: number, censor: boolean) {
     const listGroupId = [group_id];
+    if (censor) {
+      const member = await db.members.findOne({
+        group_id: new ObjectId(group_id),
+        user_id: new ObjectId(user_id),
+        status: MemberStatus.Accepted
+      });
+      if (!member)
+        throw new ErrorWithStatus({
+          message: 'Bạn không phải thành viên của cộng đồng này',
+          status: httpStatus.BAD_REQUEST
+        });
+    }
     const [resultRes, count] = await Promise.all([
       db.tweets
         .aggregate<Tweet>([
@@ -491,7 +518,8 @@ class TweetsService {
               group_id: {
                 $in: listGroupId.map((groupId) => new ObjectId(groupId))
               },
-              type: TweetTypeEnum.Tweet
+              type: TweetTypeEnum.Tweet,
+              censor: censor
             }
           },
           ...lookupUser('user_id', 'user'),
@@ -596,6 +624,8 @@ class TweetsService {
         .aggregate([
           {
             $match: {
+              type: TweetTypeEnum.Tweet,
+              censor: censor,
               group_id: {
                 $in: listGroupId.map((groupId) => new ObjectId(groupId))
               }

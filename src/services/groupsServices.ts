@@ -52,7 +52,7 @@ class GroupsService {
         {
           $facet: {
             metadata: [{ $match: { group_id, status } }, { $count: 'total_records' }],
-            data: [{ $match: { group_id } }, ...lookupUser('user_id'), { $skip: skip }, { $limit: limit }]
+            data: [{ $match: { group_id, status } }, ...lookupUser('user_id'), { $skip: skip }, { $limit: limit }]
           }
         }
       ])
@@ -76,22 +76,33 @@ class GroupsService {
     const userId = payload.decodeAuthorization.payload.userId;
     const members = await db.members.find({ user_id: new ObjectId(userId) }).toArray();
     const groups = await Promise.all(
-      members
-        .filter((member) => member.status === MemberStatus.Accepted)
-        .map(async (member) => {
-          const group = await db.groups.findOne({ _id: member.group_id });
+      members.map(async (member) => {
+        const [group, memberCount] = await Promise.all([
+          db.groups.findOne({ _id: member.group_id }),
+          db.members.countDocuments({ group_id: member.group_id, status: MemberStatus.Accepted })
+        ]);
 
-          if (!group) {
-            throw new ErrorWithStatus({ message: 'Group not found', status: httpStatus.NOT_FOUND });
-          }
-          let gr;
-          if (group.admin_id.some((id) => id.toString() === userId.toString())) {
-            gr = { ...group, isAdmin: true };
-          } else {
-            gr = { ...group, isAdmin: false };
-          }
-          return gr;
-        })
+        if (!group) {
+          throw new ErrorWithStatus({ message: 'Group not found', status: httpStatus.NOT_FOUND });
+        }
+        let gr;
+        if (group.admin_id.some((id) => id.toString() === userId.toString())) {
+          gr = {
+            ...group,
+            isAdmin: true,
+            isPending: member.status === MemberStatus.Waiting,
+            member_count: memberCount
+          };
+        } else {
+          gr = {
+            ...group,
+            isAdmin: false,
+            isPending: member.status === MemberStatus.Waiting,
+            member_count: memberCount
+          };
+        }
+        return gr;
+      })
     );
 
     return groups;

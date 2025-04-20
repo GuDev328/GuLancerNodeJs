@@ -3,6 +3,7 @@ import { ParamsDictionary } from 'express-serve-static-core';
 import { ObjectId } from 'mongodb';
 import { MemberStatus } from '~/constants/enum';
 import { CreateGroupRequest, DecodeAuthorization, EditGroupRequest, GroupID } from '~/models/requests/GroupRequest';
+import db from '~/services/databaseServices';
 import groupsService from '~/services/groupsServices';
 
 export const createGroupController = async (req: Request<ParamsDictionary, any, CreateGroupRequest>, res: Response) => {
@@ -54,6 +55,19 @@ export const getGroupByIdController = async (
   });
 };
 
+export const handlePendingMemberController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const member_id = new ObjectId(req.body.id);
+  const status = Number(req.body.status);
+  if (status === MemberStatus.Rejected) {
+    db.members.deleteOne({ _id: member_id });
+  } else {
+    db.members.updateOne({ _id: member_id }, { $set: { status } });
+  }
+  res.status(200).json({
+    message: 'Thành công'
+  });
+};
+
 export const joinGroupController = async (req: Request<ParamsDictionary, any, GroupID>, res: Response) => {
   const group_id = new ObjectId(req.body.group_id);
   const user_id = new ObjectId(req.body.decodeAuthorization.payload.userId);
@@ -61,5 +75,15 @@ export const joinGroupController = async (req: Request<ParamsDictionary, any, Gr
   res.status(200).json({
     result,
     message: 'Join nhóm thành công'
+  });
+};
+
+export const deleteGroupController = async (req: Request<ParamsDictionary, any, GroupID>, res: Response) => {
+  const group_id = new ObjectId(req.params.id);
+  await db.groups.deleteOne({ _id: group_id });
+  db.tweets.deleteMany({ group_id });
+  db.members.deleteMany({ group_id });
+  res.status(200).json({
+    message: 'Xóa nhóm thành công'
   });
 };

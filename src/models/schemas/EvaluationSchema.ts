@@ -25,7 +25,7 @@ export default class Evaluation {
     this.user_id = evaluate.user_id || new ObjectId();
     this.reviewer_id = evaluate.reviewer_id || new ObjectId();
     this.content = evaluate.content || '';
-    this.star = evaluate.star || 0;
+    this.star = evaluate.star || 5.0;
     this.created_at = evaluate.created_at || DateVi();
     this.updated_at = evaluate.updated_at || DateVi();
   }

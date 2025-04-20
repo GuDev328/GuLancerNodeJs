@@ -496,7 +496,6 @@ class UsersService {
         status: httpStatus.BAD_REQUEST
       });
     }
-    let result: any = {};
     const userFind = await db.users.findOne({ _id: new ObjectId(id) });
     if (!userFind) {
       throw new ErrorWithStatus({
@@ -504,41 +503,69 @@ class UsersService {
         status: httpStatus.NOT_FOUND
       });
     }
-    if (userFind.role === RoleType.Freelancer) {
-      const user = await db.users
-        .aggregate([
-          {
-            $match: { _id: new ObjectId(id) }
-          },
-          {
-            $lookup: {
-              from: 'Fields',
-              localField: 'fields',
-              foreignField: '_id',
-              as: 'fields_info'
-            }
-          },
-          {
-            $lookup: {
-              from: 'Technologies',
-              localField: 'technologies',
-              foreignField: '_id',
-              as: 'technologies_info'
-            }
-          },
-          {
-            $project: {
-              password: 0,
-              forgot_password_token: 0
+    const user = await db.users
+      .aggregate([
+        {
+          $match: { _id: new ObjectId(id) }
+        },
+        {
+          $lookup: {
+            from: 'Fields',
+            localField: 'fields',
+            foreignField: '_id',
+            as: 'fields_info'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Technologies',
+            localField: 'technologies',
+            foreignField: '_id',
+            as: 'technologies_info'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Evaluations',
+            let: { userId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ['$user_id', '$$userId'] }
+                }
+              },
+              {
+                $group: {
+                  _id: null,
+                  averageStar: { $avg: '$star' }
+                }
+              }
+            ],
+            as: 'evaluations'
+          }
+        },
+        {
+          $addFields: {
+            [`star`]: {
+              $toDecimal: { $ifNull: [{ $arrayElemAt: ['$evaluations.averageStar', 0] }, 5.0] }
             }
           }
-        ])
-        .toArray();
-      result = user[0];
-    } else {
-      result = userFind;
-    }
-    return result;
+        },
+        {
+          $project: {
+            evaluations: 0
+          }
+        },
+        {
+          $project: {
+            password: 0,
+            forgot_password_token: 0
+          }
+        }
+      ])
+      .toArray();
+
+    return user[0];
   }
 
   async getList(payload: GetListRequest, page: number, limit: number) {

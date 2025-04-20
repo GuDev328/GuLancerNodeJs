@@ -179,6 +179,38 @@ class SearchServices {
         $sort: sortField
       },
       {
+        $lookup: {
+          from: 'Evaluations',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$user_id', '$$userId'] }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                averageStar: { $avg: '$star' }
+              }
+            }
+          ],
+          as: 'evaluations'
+        }
+      },
+      {
+        $addFields: {
+          [`star`]: {
+            $toDecimal: { $ifNull: [{ $arrayElemAt: ['$evaluations.averageStar', 0] }, 5.0] }
+          }
+        }
+      },
+      {
+        $project: {
+          evaluations: 0
+        }
+      },
+      {
         $facet: {
           metadata: [{ $count: 'total' }],
           data: [{ $skip: (page - 1) * limit }, { $limit: limit }]
