@@ -4,6 +4,7 @@ import {
   applyInviteController,
   bookmarkController,
   createProjectController,
+  deleteProjectControler,
   detailApplyInviteController,
   editApplyInviteController,
   EditMyProgressController,
@@ -25,7 +26,8 @@ import {
   rejectApplyInviteController,
   toProcessingController,
   toRecruitingController,
-  unbookmarkController
+  unbookmarkController,
+  updateProjectController
 } from '~/controllers/projectsControllers';
 import {
   bookmarkValidator,
@@ -37,6 +39,8 @@ import { catchError } from '~/utils/handler';
 const router = Router();
 
 router.post('/create', accessTokenValidator, catchError(createProjectController));
+router.put('/update', accessTokenValidator, catchError(updateProjectController));
+router.delete('/:id', accessTokenValidator, catchError(deleteProjectControler));
 router.post('/get-all', accessTokenValidator, catchError(getAllProjectsController));
 router.get('/list-project-recruiting', accessTokenValidator, catchError(getListProjectRecruitingController));
 router.get('/get-detail-project/:id', accessTokenValidator, catchError(getDetailProjectController));

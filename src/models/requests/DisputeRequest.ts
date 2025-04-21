@@ -6,7 +6,6 @@ export interface CreateDisputeRequest {
   decodeAuthorization: JwtPayload;
   project_id: string;
   freelancer_id: string;
-  employer_id: string;
 }
 
 export interface UpdateDisputeRequest {
@@ -28,7 +27,6 @@ export interface ChangeStatusDisputeRequest {
 
 export interface CancelDisputeRequest {
   decodeAuthorization: JwtPayload;
-  _id: string;
 }
 
 export interface DisputeListSearchRequest {

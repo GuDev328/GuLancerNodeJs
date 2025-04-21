@@ -45,6 +45,18 @@ export interface CreateProjectRequest {
   startDate: Date;
 }
 
+export interface UpdateProjectRequest {
+  decodeAuthorization: JwtPayload;
+  project_id: string;
+  title: string;
+  fields: string[];
+  technologies: string[];
+  salaryType: SalaryType;
+  description: string;
+  endDate: Date;
+  startDate: Date;
+}
+
 export interface GetAllProjectRequest {
   key?: string;
   fields?: string[];

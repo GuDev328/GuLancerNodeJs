@@ -48,7 +48,7 @@ class DisputeService {
     }
     const dispute = new Dispute({
       project_id: new ObjectId(payload.project_id),
-      employer_id: new ObjectId(payload.employer_id),
+      employer_id: new ObjectId(findProject.admin_id),
       freelancer_id: new ObjectId(payload.freelancer_id),
       reporter: new ObjectId(payload.decodeAuthorization.payload.userId)
     });
@@ -141,9 +141,8 @@ class DisputeService {
     return result;
   }
 
-  async cancelDispute(payload: CancelDisputeRequest) {
-    const { _id } = payload;
-    const findDispute = await db.disputes.findOne({ _id: new ObjectId(_id) });
+  async cancelDispute(id: string, payload: CancelDisputeRequest) {
+    const findDispute = await db.disputes.findOne({ _id: new ObjectId(id) });
     if (!findDispute) {
       throw new ErrorWithStatus({
         status: 400,
@@ -152,12 +151,36 @@ class DisputeService {
     }
     if (findDispute.reporter.equals(payload.decodeAuthorization.payload.userId)) {
       const result = await db.disputes.findOneAndUpdate(
-        { _id: new ObjectId(_id) },
+        { _id: new ObjectId(id) },
         { $set: { status: 'CANCEL' } },
         { returnDocument: 'after' }
       );
+      const memberProject = await db.memberProject.findOne({
+        project_id: findDispute.project_id,
+        user_id: findDispute.freelancer_id
+      });
+
+      if (memberProject) {
+        const { currentPhase, indexCurrentPhase } = projectsService.getCurrentPhase(memberProject);
+        if (currentPhase) {
+          const newMileStoneInfo = memberProject.milestone_info;
+          newMileStoneInfo[indexCurrentPhase] = {
+            ...currentPhase,
+            status: 'PAYING'
+          };
+
+          await db.memberProject.findOneAndUpdate(
+            { project_id: findDispute.project_id, user_id: findDispute.freelancer_id },
+            {
+              $set: { milestone_info: newMileStoneInfo }
+            }
+          );
+        }
+      }
+
       return result;
     }
+
     throw new ErrorWithStatus({
       status: httpStatus.FORBIDDEN,
       message: 'Bạn không có quyền hủy tranh chấp này'

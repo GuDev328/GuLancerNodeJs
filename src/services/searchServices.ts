@@ -242,8 +242,6 @@ class SearchServices {
       }
     ];
 
-    console.log(commonQuery);
-
     const queryNoTechField = [
       {
         $match: {

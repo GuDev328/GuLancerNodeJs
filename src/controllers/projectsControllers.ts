@@ -14,7 +14,8 @@ import {
   EscrowRequest,
   GetAllProjectRequest,
   GetApplyInviteRequest,
-  GetMyProjectsRequest
+  GetMyProjectsRequest,
+  UpdateProjectRequest
 } from '~/models/requests/ProjectRequest';
 import HistoryAmount from '~/models/schemas/HistoryAmountSchema';
 import db from '~/services/databaseServices';
@@ -30,6 +31,44 @@ export const createProjectController = async (
   await projectsService.createProject(req.body);
   res.status(200).json({
     message: 'Create suscess'
+  });
+};
+
+export const updateProjectController = async (
+  req: Request<ParamsDictionary, any, UpdateProjectRequest>,
+  res: Response
+) => {
+  await projectsService.updateProject(req.body);
+  res.status(200).json({
+    message: 'Cập nhật dự án thành công'
+  });
+};
+
+export const deleteProjectControler = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+  const { decodeAuthorization } = req.body;
+  const project = await db.projects.findOne({ _id: new ObjectId(id) });
+  if (!project) {
+    throw new ErrorWithStatus({
+      message: 'Không tìm thấy dự án',
+      status: httpStatus.NOT_FOUND
+    });
+  }
+  if (project.admin_id.toString() !== decodeAuthorization.payload.userId) {
+    throw new ErrorWithStatus({
+      message: 'Bạn không có quyền xóa dự án',
+      status: httpStatus.FORBIDDEN
+    });
+  }
+  if (project.status !== StatusProject.NotReady && project.status !== StatusProject.Recruiting) {
+    throw new ErrorWithStatus({
+      message: 'Chỉ có thể xoá dự án khi chưa bắt đầu',
+      status: httpStatus.FORBIDDEN
+    });
+  }
+  await db.projects.deleteOne({ _id: new ObjectId(id) });
+  res.status(200).json({
+    message: 'Xóa dự án thành công'
   });
 };
 
@@ -161,7 +200,7 @@ export const getMemberController = async (req: Request<ParamsDictionary, any, an
     .toArray();
 
   res.status(200).json({
-    result: result.map((item) => item.user_info[0]),
+    result: result.map((item) => item.user_info),
     message: 'Lấy danh sách thành công'
   });
 };

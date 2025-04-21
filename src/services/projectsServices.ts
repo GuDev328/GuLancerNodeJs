@@ -10,7 +10,8 @@ import {
   EscrowRequest,
   GetAllProjectRequest,
   GetApplyInviteRequest,
-  GetMyProjectsRequest
+  GetMyProjectsRequest,
+  UpdateProjectRequest
 } from '~/models/requests/ProjectRequest';
 import Bookmark from '~/models/schemas/BookmarkSchema';
 import { httpStatus } from '~/constants/httpStatus';
@@ -71,6 +72,56 @@ class ProjectsService {
     });
 
     return await db.projects.insertOne(project);
+  }
+
+  async updateProject(payload: UpdateProjectRequest) {
+    const project = await db.projects.findOne({ _id: new ObjectId(payload.project_id) });
+    if (!project) {
+      throw new ErrorWithStatus({
+        message: 'Không tìm thấy dự án',
+        status: httpStatus.NOT_FOUND
+      });
+    }
+
+    if (project.admin_id.toString() !== payload.decodeAuthorization.payload.userId) {
+      throw new ErrorWithStatus({
+        message: 'Bạn không có quyền cập nhật dự án',
+        status: httpStatus.FORBIDDEN
+      });
+    }
+
+    const fieldsFinds = await Promise.all(
+      payload.fields.map(async (field) => {
+        const fieldFind = await db.fields.findOne<Field>({ name: field });
+        if (!fieldFind) {
+          const init = await db.fields.insertOne(new Field({ name: field }));
+          return new ObjectId(init.insertedId);
+        } else {
+          return fieldFind._id;
+        }
+      })
+    );
+    const techsFinds = await Promise.all(
+      payload.technologies.map(async (tech) => {
+        const techFind = await db.technologies.findOne<Technology>({ name: tech });
+        if (!techFind) {
+          const init = await db.technologies.insertOne(new Technology({ name: tech }));
+          return new ObjectId(init.insertedId);
+        } else {
+          return new ObjectId(techFind._id);
+        }
+      })
+    );
+    const update = {
+      title: payload.title,
+      salaryType: payload.salaryType,
+      description: payload.description,
+      technologies: techsFinds,
+      fields: fieldsFinds,
+      end_date: new Date(payload.endDate),
+      start_date: new Date(payload.startDate)
+    };
+    return await db.projects.updateOne({ _id: new ObjectId(payload.project_id) }, { $set: update });
   }
 
   async bookmark(payload: BookmarkRequest) {

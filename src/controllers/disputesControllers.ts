@@ -69,7 +69,8 @@ export const cancelDisputeController = async (
   req: Request<ParamsDictionary, any, CancelDisputeRequest>,
   res: Response
 ) => {
-  const dispute = await disputesService.cancelDispute(req.body);
+  const { id } = req.params;
+  const dispute = await disputesService.cancelDispute(id, req.body);
   res.status(200).json({
     message: 'Cancel dispute success',
     result: dispute
