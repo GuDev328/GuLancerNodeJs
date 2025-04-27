@@ -3,18 +3,19 @@ import { ParamsDictionary } from 'express-serve-static-core';
 import { param } from 'express-validator';
 import { ObjectId } from 'mongodb';
 import path from 'path';
-import { GroupTypes, MemberStatus, TweetTypeEnum } from '~/constants/enum';
+import { GroupTypes, MemberStatus, RoleType, TweetTypeEnum } from '~/constants/enum';
 import { httpStatus } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/models/Errors';
 import { LikeRequest } from '~/models/requests/LikeRequest';
 import { TweetRequest, getTweetRequest } from '~/models/requests/TweetRequest';
+import { Report } from '~/models/schemas/ReportSchema';
 import db from '~/services/databaseServices';
 import tweetsService from '~/services/tweetsServices';
 
 export const createTweetController = async (req: Request<ParamsDictionary, any, TweetRequest>, res: Response) => {
   const result = await tweetsService.createNewTweet(req.body);
   res.status(200).json({
-    message: !result ? 'Bài viết đã được gửi chờ kiểm duyệt' : 'Đăng tải bài viết thành công'
+    message: result ? 'Bài viết đã được gửi chờ kiểm duyệt' : 'Đăng tải bài viết thành công'
   });
 };
 
@@ -70,7 +71,9 @@ export const getPostsByGroupIdController = async (req: Request<ParamsDictionary,
   const censor = req.query.censor === 'true';
   const group_id = req.params.id;
   const user_id = req.body.decodeAuthorization.payload.userId;
-  const { total_page, result } = await tweetsService.getPostsByGroupId(group_id, user_id, limit, page, censor);
+  const isAdmin = req.body.decodeAuthorization.payload.role === RoleType.Admin;
+
+  const { total_page, result } = await tweetsService.getPostsByGroupId(group_id, user_id, limit, page, censor, isAdmin);
   res.status(200).json({
     result,
     total_page,
@@ -106,5 +109,134 @@ export const rejectTweetsController = async (req: Request<ParamsDictionary, any,
   await db.tweets.deleteOne({ _id: new ObjectId(tweet_id) });
   res.status(200).json({
     message: 'Từ chối bài viết thành công'
+  });
+};
+
+export const createReportController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+  await db.reports.insertOne(
+    new Report({
+      reporter: new ObjectId(req.body.decodeAuthorization.payload.userId),
+      id_reported: new ObjectId(id),
+      type: 'POST',
+      description: req.body.description
+    })
+  );
+  res.status(200).json({
+    message: 'Báo cáo thành công'
+  });
+};
+
+export const getReportsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  const [reports, total] = await Promise.all([
+    db.reports
+      .aggregate([
+        {
+          $match: {
+            type: 'POST'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Tweets',
+            localField: 'id_reported',
+            foreignField: '_id',
+            as: 'tweet'
+          }
+        },
+        {
+          $unwind: '$tweet'
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'reporter',
+            foreignField: '_id',
+            as: 'reporter_info'
+          }
+        },
+        {
+          $unwind: '$reporter_info'
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'tweet.user_id',
+            foreignField: '_id',
+            as: 'tweet_author'
+          }
+        },
+        {
+          $unwind: '$tweet_author'
+        },
+        {
+          $lookup: {
+            from: 'Groups',
+            localField: 'tweet.group_id',
+            foreignField: '_id',
+            as: 'group'
+          }
+        },
+        {
+          $unwind: '$group'
+        },
+
+        {
+          $skip: skip
+        },
+        {
+          $limit: limit
+        }
+      ])
+      .toArray(),
+    db.reports.countDocuments({ type: 'POST' })
+  ]);
+
+  const total_page = Math.ceil(total / limit);
+
+  return res.status(200).json({
+    message: 'Get reports success',
+    result: reports,
+    total_page,
+    page,
+    total
+  });
+};
+
+export const rejectReportsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+
+  // Delete the report
+  await db.reports.deleteOne({ _id: new ObjectId(id) });
+
+  return res.status(200).json({
+    message: 'Từ chối đơn báo cáo thành công'
+  });
+};
+
+export const approveReportsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+
+  // Get report details to find tweet ID
+  const report = await db.reports.findOne({ _id: new ObjectId(id) });
+  if (!report) {
+    throw new ErrorWithStatus({
+      message: 'Không tồn tại đơn báo cáo này!',
+      status: httpStatus.NOT_FOUND
+    });
+  }
+
+  // Delete the reported tweet
+  await db.tweets.deleteOne({ _id: report.id_reported });
+
+  // Delete the report
+  await db.reports.deleteOne({ _id: new ObjectId(id) });
+
+  return res.status(200).json({
+    message: 'Duyệt đơn báo cáo và xóa bài viết thành công'
   });
 };

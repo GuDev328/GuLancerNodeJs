@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import {
+  approveReportsController,
   approveTweetsController,
+  createReportController,
   createTweetController,
   getNewsFeedController,
   getPostsByGroupIdController,
+  getReportsController,
   getTweetChildrenController,
   getTweetController,
   likeController,
+  rejectReportsController,
   rejectTweetsController,
   unlikeController
 } from '~/controllers/tweetsControllers';
@@ -41,5 +45,10 @@ router.post('/unlike', accessTokenValidator, likeValidator, catchError(unlikeCon
 
 router.put('/approve/:id', accessTokenValidator, catchError(approveTweetsController));
 router.put('/reject/:id', accessTokenValidator, catchError(rejectTweetsController));
+
+router.post('/report/:id', accessTokenValidator, catchError(createReportController));
+router.get('/reports', accessTokenValidator, catchError(getReportsController));
+router.post('/reject-report/:id', accessTokenValidator, catchError(rejectReportsController));
+router.post('/approve-report/:id', accessTokenValidator, catchError(approveReportsController));
 
 export default router;

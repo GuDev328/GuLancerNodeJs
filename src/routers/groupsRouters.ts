@@ -1,14 +1,19 @@
 import { Router } from 'express';
 import {
+  approveGroupReportController,
   createGroupController,
+  createReportController,
   deleteGroupController,
   editGroupController,
   getGroupByIdController,
+  getGroupReportsController,
+  getGroupsListController,
   getMembersController,
   getMyGroupsController,
   handlePendingMemberController,
   joinGroupController,
-  leaveGroupController
+  leaveGroupController,
+  rejectGroupReportController
 } from '~/controllers/groupsController';
 import { accessTokenValidator } from '~/middlewares/usersMiddlewares';
 import { catchError } from '~/utils/handler';
@@ -20,8 +25,15 @@ router.get('/get-members/:id', accessTokenValidator, catchError(getMembersContro
 router.get('/my-groups', accessTokenValidator, catchError(getMyGroupsController));
 router.post('/join-group', accessTokenValidator, catchError(joinGroupController));
 router.put('/leave-group/:id', accessTokenValidator, catchError(leaveGroupController));
-router.get('/:id', accessTokenValidator, catchError(getGroupByIdController));
+
 router.post('/handle-member', accessTokenValidator, catchError(handlePendingMemberController));
 router.delete('/:id', accessTokenValidator, catchError(deleteGroupController));
+router.post('/report/:id', accessTokenValidator, catchError(createReportController));
+
+router.get('/reports', accessTokenValidator, catchError(getGroupReportsController));
+router.post('/reject-report/:id', accessTokenValidator, catchError(rejectGroupReportController));
+router.post('/approve-report/:id', accessTokenValidator, catchError(approveGroupReportController));
+router.get('/list', accessTokenValidator, catchError(getGroupsListController));
+router.get('/:id', accessTokenValidator, catchError(getGroupByIdController));
 
 export default router;

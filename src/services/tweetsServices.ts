@@ -46,7 +46,7 @@ class TweetsService {
       censor: !group.censor
     });
     const createTweet = await db.tweets.insertOne(tweet);
-    return !group.censor;
+    return group.censor;
   }
 
   async increaseViews(payload: getTweetRequest) {
@@ -204,14 +204,6 @@ class TweetsService {
         throw new ErrorWithStatus({
           message: 'Yêu cầu đăng nhập',
           status: httpStatus.UNAUTHORIZED
-        });
-      }
-      const userGetTweet = new ObjectId(payload.decodeAuthorization.payload.userId);
-      const isMember = await db.members.findOne({ group_id: group_id, user_id: userGetTweet });
-      if (!isMember || isMember.status !== MemberStatus.Accepted) {
-        throw new ErrorWithStatus({
-          status: httpStatus.UNAUTHORIZED,
-          message: 'Bạn không có quyền truy cập'
         });
       }
     }
@@ -496,7 +488,14 @@ class TweetsService {
     return { total_page: Math.ceil(count[0]?.total / limit), result };
   }
 
-  async getPostsByGroupId(group_id: string, user_id: string, limit: number, page: number, censor: boolean) {
+  async getPostsByGroupId(
+    group_id: string,
+    user_id: string,
+    limit: number,
+    page: number,
+    censor: boolean,
+    isAdmin: boolean
+  ) {
     const listGroupId = [group_id];
     if (censor) {
       const member = await db.members.findOne({
@@ -504,7 +503,7 @@ class TweetsService {
         user_id: new ObjectId(user_id),
         status: MemberStatus.Accepted
       });
-      if (!member)
+      if (!member && !isAdmin)
         throw new ErrorWithStatus({
           message: 'Bạn không phải thành viên của cộng đồng này',
           status: httpStatus.BAD_REQUEST

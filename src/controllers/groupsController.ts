@@ -2,7 +2,10 @@ import { Request, Response } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ObjectId } from 'mongodb';
 import { MemberStatus } from '~/constants/enum';
+import { httpStatus } from '~/constants/httpStatus';
+import { ErrorWithStatus } from '~/models/Errors';
 import { CreateGroupRequest, DecodeAuthorization, EditGroupRequest, GroupID } from '~/models/requests/GroupRequest';
+import { Report } from '~/models/schemas/ReportSchema';
 import db from '~/services/databaseServices';
 import groupsService from '~/services/groupsServices';
 
@@ -95,5 +98,219 @@ export const deleteGroupController = async (req: Request<ParamsDictionary, any, 
   db.members.deleteMany({ group_id });
   res.status(200).json({
     message: 'Xóa nhóm thành công'
+  });
+};
+
+export const createReportController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+  await db.reports.insertOne(
+    new Report({
+      reporter: new ObjectId(req.body.decodeAuthorization.payload.userId),
+      id_reported: new ObjectId(id),
+      type: 'GROUP',
+      description: req.body.description
+    })
+  );
+  res.status(200).json({
+    message: 'Báo cáo thành công'
+  });
+};
+
+export const getGroupReportsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  const [reports, total] = await Promise.all([
+    db.reports
+      .aggregate([
+        {
+          $match: {
+            type: 'GROUP'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Groups',
+            localField: 'id_reported',
+            foreignField: '_id',
+            as: 'group'
+          }
+        },
+        {
+          $unwind: '$group'
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'reporter',
+            foreignField: '_id',
+            as: 'reporter_info'
+          }
+        },
+        {
+          $unwind: '$reporter_info'
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'group.admin_id',
+            foreignField: '_id',
+            as: 'admin_info'
+          }
+        },
+
+        {
+          $skip: skip
+        },
+        {
+          $limit: limit
+        }
+      ])
+      .toArray(),
+    db.reports.countDocuments({ type: 'GROUP' })
+  ]);
+
+  const total_page = Math.ceil(total / limit);
+
+  return res.status(200).json({
+    message: 'Lấy danh sách báo cáo nhóm thành công',
+    result: reports,
+    total_page,
+    page,
+    total
+  });
+};
+
+export const rejectGroupReportController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+
+  // Delete the report
+  await db.reports.deleteOne({ _id: new ObjectId(id) });
+
+  return res.status(200).json({
+    message: 'Từ chối đơn báo cáo nhóm thành công'
+  });
+};
+
+export const approveGroupReportController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { id } = req.params;
+
+  // Get report details to find group ID
+  const report = await db.reports.findOne({ _id: new ObjectId(id) });
+  if (!report) {
+    throw new ErrorWithStatus({
+      message: 'Không tồn tại đơn báo cáo này!',
+      status: httpStatus.NOT_FOUND
+    });
+  }
+
+  // Delete all group members
+  db.members.deleteMany({ group_id: report.id_reported });
+
+  // Delete all tweets in group
+  db.tweets.deleteMany({ group_id: report.id_reported });
+
+  // Delete the group
+  db.groups.deleteOne({ _id: report.id_reported });
+  // Delete the report
+  db.reports.deleteOne({ _id: new ObjectId(id) });
+  return res.status(200).json({
+    message: 'Duyệt đơn báo cáo và xóa nhóm thành công'
+  });
+};
+
+export const getGroupsListController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 20;
+  const search_key = (req.query.search_key as string) || '';
+  const sort_by = (req.query.sort_by as string) || 'created_at';
+  const order_by = (req.query.order_by as string) || 'desc';
+  const skip = (page - 1) * limit;
+
+  // Build search condition
+  const searchRegex = new RegExp(search_key, 'i');
+  const searchCondition = search_key
+    ? {
+        $or: [{ name: searchRegex }, { 'admin_info.name': searchRegex }]
+      }
+    : {};
+
+  // Build sort condition
+  const sortCondition: any = {};
+  if (sort_by === 'members_count') {
+    sortCondition.members_count = order_by === 'desc' ? -1 : 1;
+  } else if (sort_by === 'posts_count') {
+    sortCondition.posts_count = order_by === 'desc' ? -1 : 1;
+  } else {
+    sortCondition.created_at = order_by === 'desc' ? -1 : 1;
+  }
+  console.log(sortCondition);
+  const [groups, total] = await Promise.all([
+    db.groups
+      .aggregate([
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'admin_id',
+            foreignField: '_id',
+            as: 'admin_info'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Members',
+            localField: '_id',
+            foreignField: 'group_id',
+            pipeline: [
+              {
+                $match: {
+                  status: MemberStatus.Accepted
+                }
+              }
+            ],
+            as: 'members'
+          }
+        },
+        {
+          $lookup: {
+            from: 'Tweets',
+            localField: '_id',
+            foreignField: 'group_id',
+            as: 'posts'
+          }
+        },
+        {
+          $addFields: {
+            members_count: { $size: '$members' },
+            posts_count: { $size: '$posts' }
+          }
+        },
+        {
+          $match: searchCondition
+        },
+
+        {
+          $sort: sortCondition
+        },
+        {
+          $skip: skip
+        },
+        {
+          $limit: limit
+        }
+      ])
+      .toArray(),
+    db.groups.countDocuments(searchCondition)
+  ]);
+
+  const total_page = Math.ceil(total / limit);
+
+  return res.status(200).json({
+    message: 'Lấy danh sách nhóm thành công',
+    result: groups,
+    total_page,
+    page,
+    total
   });
 };
