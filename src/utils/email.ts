@@ -1,84 +1,73 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-var-requires */
-import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses';
+import nodemailer from 'nodemailer';
+import { env } from '~/constants/config';
 import fs from 'fs';
 import path from 'path';
-import { env } from '~/constants/config';
-import { SendEmail } from '~/constants/enum';
 
-// Create SES service object.
-const sesClient = new SESClient({
-  region: env.AWSRegion,
-  credentials: {
-    secretAccessKey: env.AWSSecretAccessKey,
-    accessKeyId: env.AWSAccessKeyID
+// Khởi tạo transporter cho nodemailer
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: env.emailApp,
+    pass: env.emailAppPassword
   }
 });
 
-const createSendEmailCommand = ({
-  fromAddress,
-  toAddresses,
-  ccAddresses = [],
-  body,
-  subject,
-  replyToAddresses = []
-}: {
-  fromAddress: string;
-  toAddresses: string | string[];
-  ccAddresses?: string | string[];
-  body: string;
+interface SendEmailOptions {
+  to: string | string[];
   subject: string;
-  replyToAddresses?: string | string[];
-}) => {
-  return new SendEmailCommand({
-    Destination: {
-      /* required */
-      CcAddresses: ccAddresses instanceof Array ? ccAddresses : [ccAddresses],
-      ToAddresses: toAddresses instanceof Array ? toAddresses : [toAddresses]
-    },
-    Message: {
-      /* required */
-      Body: {
-        /* required */
-        Html: {
-          Charset: 'UTF-8',
-          Data: body
-        }
-      },
-      Subject: {
-        Charset: 'UTF-8',
-        Data: subject
-      }
-    },
-    Source: fromAddress,
-    ReplyToAddresses: replyToAddresses instanceof Array ? replyToAddresses : [replyToAddresses]
+  html: string;
+}
+
+/**
+ * Hàm gửi email chung
+ */
+const sendEmail = async (options: SendEmailOptions): Promise<void> => {
+  try {
+    await transporter.sendMail({
+      from: `"GuLancer" <${env.emailApp}>`,
+      to: Array.isArray(options.to) ? options.to.join(',') : options.to,
+      subject: options.subject,
+      html: options.html
+    });
+  } catch (error) {
+    console.error('Lỗi khi gửi email:', error);
+    throw new Error('Không thể gửi email');
+  }
+};
+
+/**
+ * Gửi email mật khẩu cho người dùng mới
+ */
+export const sendPasswordEmail = async (to: string, userName: string, password: string): Promise<void> => {
+  const template = fs.readFileSync(path.resolve('src/templates/SendPassword.html'), 'utf8');
+  const html = template
+    .replace('{{userName}}', userName)
+    .replace('{{password}}', password)
+    .replace('{{loginUrl}}', `${env.clientUrl}/login`)
+    .replace('{{year}}', new Date().getFullYear().toString());
+
+  await sendEmail({
+    to,
+    subject: 'Chào mừng đến với GuLancer - Thông tin đăng nhập của bạn',
+    html
   });
 };
 
-export const sendEmail = async (toAddress: string | string[], token: string, type: SendEmail) => {
-  const tempalte = fs.readFileSync(path.resolve('src/templates/templateVerifyEmail.html'), 'utf8');
-  let body = '';
-  let subject = '';
-  if (type === SendEmail.Password) {
-    subject = env.subjectPassword as string;
-    body = tempalte
-      .replace('{{title}}', env.titlePassword as string)
-      .replace('{{content}}', (env.contentPassword as string) + token)
-      .replace('{{verifyLink}}', env.host + '/login');
-  } else if (type === SendEmail.FogotPassword) {
-    subject = env.subjectEmailForgotPassword as string;
-    body = tempalte
-      .replace('{{title}}', env.titleEmailForgotPassword as string)
-      .replace('{{content}}', env.contentEmailForgotPassword as string)
-      .replace('{{verifyLink}}', env.host + '/forgot-password?token=' + token);
-  }
+/**
+ * Gửi email đặt lại mật khẩu
+ */
+export const sendResetPasswordEmail = async (to: string, userName: string, resetToken: string): Promise<void> => {
+  const template = fs.readFileSync(path.resolve('src/templates/ForgotPassword.html'), 'utf8');
+  const html = template
+    .replace('{{userName}}', userName)
+    .replace('{{resetLink}}', `${env.clientUrl}/reset-password?token=${resetToken}`)
+    .replace('{{year}}', new Date().getFullYear().toString());
 
-  const sendEmailCommand = createSendEmailCommand({
-    fromAddress: env.SESFromAddress as string,
-    toAddresses: toAddress,
-    body,
-    subject: subject ? subject : 'GuLaner'
+  await sendEmail({
+    to,
+    subject: 'GuLancer - Yêu cầu đặt lại mật khẩu',
+    html
   });
-  await sesClient.send(sendEmailCommand);
-  return;
 };

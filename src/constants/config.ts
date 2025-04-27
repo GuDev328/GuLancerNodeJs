@@ -12,6 +12,9 @@ export const env = {
   host: process.env.HOST as string,
   clientUrl: process.env.CLIENT_URL as string,
 
+  emailApp: process.env.EMAIL_USERNAME as string,
+  emailAppPassword: process.env.EMAIL_PASSWORD as string,
+
   mongodbURI: process.env.MONGODB_URI as string,
   dbName: process.env.DB_NAME as string,
 

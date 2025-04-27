@@ -28,13 +28,14 @@ import { ObjectId } from 'mongodb';
 import { JwtPayload } from 'jsonwebtoken';
 import { httpStatus } from '~/constants/httpStatus';
 import Follower from '~/models/schemas/FollowerSchema';
-import { sendEmail } from '~/utils/email';
 import axios from 'axios';
 import { nanoid } from 'nanoid';
 import { env } from '~/constants/config';
 import { DateVi } from '~/utils/date-vi';
 import Field from '~/models/schemas/FieldSchema';
 import Technology from '~/models/schemas/TechnologySchema';
+import { sendPasswordEmail } from '~/utils/email';
+import { sendResetPasswordEmail } from '../utils/email';
 
 class UsersService {
   constructor() {}
@@ -214,7 +215,7 @@ class UsersService {
         user_id: result.insertedId
       })
     );
-    //sendEmail(payload.email, randompassword, SendEmail.Password);
+    sendPasswordEmail(payload.email, payload.name, randompassword);
     return {
       accessToken,
       refreshToken
@@ -280,7 +281,9 @@ class UsersService {
         $set: { forgot_password_token, updated_at: '$$NOW' }
       }
     ]);
-    //await sendEmail(payload.user.email, forgot_password_token, SendEmail.FogotPassword);
+
+    sendResetPasswordEmail(payload.user.email, payload.user.name, forgot_password_token);
+
     return;
   }
 
