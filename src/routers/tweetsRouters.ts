@@ -4,6 +4,7 @@ import {
   approveTweetsController,
   createReportController,
   createTweetController,
+  getMonthlyTweetStatisticsController,
   getNewsFeedController,
   getPostsByGroupIdController,
   getReportsController,
@@ -50,5 +51,6 @@ router.post('/report/:id', accessTokenValidator, catchError(createReportControll
 router.get('/reports', accessTokenValidator, catchError(getReportsController));
 router.post('/reject-report/:id', accessTokenValidator, catchError(rejectReportsController));
 router.post('/approve-report/:id', accessTokenValidator, catchError(approveReportsController));
+router.get('/monthly-stats', accessTokenValidator, catchError(getMonthlyTweetStatisticsController));
 
 export default router;

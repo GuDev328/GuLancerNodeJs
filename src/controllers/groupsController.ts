@@ -245,7 +245,6 @@ export const getGroupsListController = async (req: Request<ParamsDictionary, any
   } else {
     sortCondition.created_at = order_by === 'desc' ? -1 : 1;
   }
-  console.log(sortCondition);
   const [groups, total] = await Promise.all([
     db.groups
       .aggregate([
@@ -312,5 +311,71 @@ export const getGroupsListController = async (req: Request<ParamsDictionary, any
     total_page,
     page,
     total
+  });
+};
+
+export const getTopGroupsStatisticsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { type = 'posts' } = req.query; // 'posts' or 'members'
+
+  if (!['posts', 'members'].includes(type as string)) {
+    throw new ErrorWithStatus({
+      message: 'Loại thống kê không hợp lệ. Sử dụng "posts" hoặc "members"',
+      status: httpStatus.BAD_REQUEST
+    });
+  }
+
+  const pipeline = [
+    {
+      $lookup:
+        type === 'posts'
+          ? {
+              from: 'Tweets',
+              localField: '_id',
+              foreignField: 'group_id',
+              as: 'posts'
+            }
+          : {
+              from: 'Members',
+              localField: '_id',
+              foreignField: 'group_id',
+              as: 'members'
+            }
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        count: type === 'posts' ? { $size: '$posts' } : { $size: '$members' }
+      }
+    },
+    {
+      $sort: { count: -1 }
+    }
+  ];
+
+  const statistics = await db.groups.aggregate(pipeline).toArray();
+
+  // Get top 5 and calculate others
+  const top5 = statistics.slice(0, 5);
+  const totalCount = statistics.reduce((sum, item) => sum + item.count, 0);
+  const top5Count = top5.reduce((sum, item) => sum + item.count, 0);
+  const othersCount = totalCount - top5Count;
+
+  const result = [
+    ...top5,
+    ...(othersCount > 0
+      ? [
+          {
+            _id: 'others',
+            name: 'Khác',
+            count: othersCount
+          }
+        ]
+      : [])
+  ];
+
+  return res.status(200).json({
+    message: `Lấy thống kê top cộng đồng theo ${type === 'posts' ? 'số bài viết' : 'số thành viên'} thành công`,
+    result
   });
 };

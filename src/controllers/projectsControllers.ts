@@ -610,3 +610,227 @@ export const getListInviteController = async (req: Request<ParamsDictionary, any
     }
   });
 };
+
+export const getProjectStatisticsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const pipeline = [
+    {
+      $group: {
+        _id: '$status',
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        status: '$_id',
+        count: 1
+      }
+    }
+  ];
+
+  const statistics = await db.projects.aggregate(pipeline).toArray();
+
+  // Map all possible statuses to ensure we have all status counts
+  const allStatuses = [
+    StatusProject.NotReady,
+    StatusProject.Recruiting,
+    StatusProject.Processing,
+    StatusProject.PendingMemberReady,
+    StatusProject.Pause,
+    StatusProject.Paying,
+    StatusProject.Complete,
+    StatusProject.Disputed
+  ];
+  const vieStatus = [
+    'Chưa sẵn sàng',
+    'Đang tuyển dụng',
+    'Đang thực hiện',
+    'Chờ thành viên bắt đầu',
+    'Tạm dừng',
+    'Đang thanh toán',
+    'Đã hoàn thành',
+    'Đang tranh chấp'
+  ];
+
+  const result = allStatuses.map((status, index) => {
+    const stat = statistics.find((s) => s.status === status) || { count: 0 };
+    return {
+      status,
+      name: vieStatus[index],
+      count: stat.count
+    };
+  });
+
+  return res.status(200).json({
+    message: 'Lấy thống kê dự án thành công',
+    result
+  });
+};
+
+export const getProjectStatisticsByMonthController = async (
+  req: Request<ParamsDictionary, any, any>,
+  res: Response
+) => {
+  const { year } = req.query;
+
+  if (!year || !/^\d{4}$/.test(year as string)) {
+    throw new ErrorWithStatus({
+      message: 'Định dạng năm không hợp lệ. Sử dụng định dạng YYYY',
+      status: httpStatus.BAD_REQUEST
+    });
+  }
+
+  const yearNum = parseInt(year as string);
+  const startDate = new Date(yearNum, 0, 1); // January 1st
+  const endDate = new Date(yearNum, 11, 31, 23, 59, 59); // December 31st
+
+  const pipeline = [
+    {
+      $match: {
+        created_at: {
+          $gte: startDate,
+          $lte: endDate
+        }
+      }
+    },
+    {
+      $group: {
+        _id: { $month: '$created_at' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { _id: 1 }
+    }
+  ];
+
+  const statistics = await db.projects.aggregate(pipeline).toArray();
+
+  // Create a complete dataset with all months
+  const completeStats = Array.from({ length: 12 }, (_, i) => {
+    const month = i + 1;
+    const monthData = statistics.find((stat) => stat._id === month);
+    return {
+      month,
+      count: monthData?.count || 0
+    };
+  });
+
+  return res.status(200).json({
+    message: 'Lấy thống kê số dự án theo tháng thành công',
+    result: completeStats
+  });
+};
+
+export const getOverallTechnologyStatisticsController = async (
+  req: Request<ParamsDictionary, any, any>,
+  res: Response
+) => {
+  const pipeline = [
+    {
+      $unwind: '$technologies'
+    },
+    {
+      $lookup: {
+        from: 'Technologies',
+        localField: 'technologies',
+        foreignField: '_id',
+        as: 'tech_info'
+      }
+    },
+    {
+      $unwind: '$tech_info'
+    },
+    {
+      $group: {
+        _id: '$tech_info._id',
+        name: { $first: '$tech_info.name' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { count: -1 }
+    }
+  ];
+
+  const statistics = await db.projects.aggregate(pipeline).toArray();
+
+  // Get top 5 and calculate others
+  const top5 = statistics.slice(0, 5);
+  const totalCount = statistics.reduce((sum, item) => sum + item.count, 0);
+  const top5Count = top5.reduce((sum, item) => sum + item.count, 0);
+  const othersCount = totalCount - top5Count;
+
+  const result = [
+    ...top5,
+    ...(othersCount > 0
+      ? [
+          {
+            _id: 'others',
+            name: 'Khác',
+            count: othersCount
+          }
+        ]
+      : [])
+  ];
+
+  return res.status(200).json({
+    message: 'Lấy thống kê công nghệ thành công',
+    result
+  });
+};
+
+export const getOverallFieldStatisticsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const pipeline = [
+    {
+      $unwind: '$fields'
+    },
+    {
+      $lookup: {
+        from: 'Fields',
+        localField: 'fields',
+        foreignField: '_id',
+        as: 'field_info'
+      }
+    },
+    {
+      $unwind: '$field_info'
+    },
+    {
+      $group: {
+        _id: '$field_info._id',
+        name: { $first: '$field_info.name' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { count: -1 }
+    }
+  ];
+
+  const statistics = await db.projects.aggregate(pipeline).toArray();
+
+  // Get top 5 and calculate others
+  const top5 = statistics.slice(0, 5);
+  const totalCount = statistics.reduce((sum, item) => sum + item.count, 0);
+  const top5Count = top5.reduce((sum, item) => sum + item.count, 0);
+  const othersCount = totalCount - top5Count;
+
+  const result = [
+    ...top5,
+    ...(othersCount > 0
+      ? [
+          {
+            _id: 'others',
+            name: 'Khác',
+            count: othersCount
+          }
+        ]
+      : [])
+  ];
+
+  return res.status(200).json({
+    message: 'Lấy thống kê lĩnh vực thành công',
+    result
+  });
+};

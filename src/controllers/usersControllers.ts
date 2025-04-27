@@ -29,6 +29,9 @@ import { DecodeAuthorization } from '~/models/requests/GroupRequest';
 import { ObjectId } from 'mongodb';
 import db from '~/services/databaseServices';
 import { AccountStatus } from '~/constants/enum';
+import { RoleType } from '~/constants/enum';
+import { ErrorWithStatus } from '~/models/Errors';
+import { httpStatus } from '~/constants/httpStatus';
 
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequest>, res: Response) => {
   const result = await userService.login(req.body);
@@ -283,5 +286,196 @@ export const getAmountHistoryController = async (req: Request<ParamsDictionary, 
   res.status(200).json({
     result,
     message: 'Lấy biến động số dư thành công'
+  });
+};
+
+export const getUserRegistrationStatsByMonthController = async (
+  req: Request<ParamsDictionary, any, any>,
+  res: Response
+) => {
+  const { month } = req.query;
+
+  // Validate month format
+  if (!month || !/^(0[1-9]|1[0-2])\/\d{4}$/.test(month as string)) {
+    throw new ErrorWithStatus({
+      message: 'Định dạng tháng không hợp lệ. Sử dụng định dạng MM/YYYY',
+      status: httpStatus.BAD_REQUEST
+    });
+  }
+
+  const [monthStr, yearStr] = (month as string).split('/');
+  const startDate = new Date(parseInt(yearStr), parseInt(monthStr) - 1, 1);
+  const endDate = new Date(parseInt(yearStr), parseInt(monthStr), 0, 23, 59, 59);
+
+  const pipeline = [
+    {
+      $match: {
+        created_at: {
+          $gte: startDate,
+          $lte: endDate
+        },
+        role: {
+          $in: [RoleType.Freelancer, RoleType.Employer]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$role',
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        role: {
+          $switch: {
+            branches: [
+              { case: { $eq: ['$_id', RoleType.Freelancer] }, then: 'Freelancer' },
+              { case: { $eq: ['$_id', RoleType.Employer] }, then: 'Employer' }
+            ],
+            default: 'Unknown'
+          }
+        },
+        count: 1
+      }
+    },
+    {
+      $sort: { count: -1 }
+    }
+  ];
+
+  const statistics = await db.users.aggregate(pipeline).toArray();
+
+  return res.status(200).json({
+    message: 'Lấy thống kê người dùng đăng ký mới thành công',
+    result: statistics
+  });
+};
+
+export const getOverallUserStatisticsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const pipeline = [
+    {
+      $match: {
+        role: {
+          $in: [RoleType.Freelancer, RoleType.Employer]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$role',
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        role: {
+          $switch: {
+            branches: [
+              { case: { $eq: ['$_id', RoleType.Freelancer] }, then: 'Freelancer' },
+              { case: { $eq: ['$_id', RoleType.Employer] }, then: 'Employer' }
+            ],
+            default: 'Unknown'
+          }
+        },
+        count: 1
+      }
+    },
+    {
+      $sort: { count: -1 }
+    }
+  ];
+
+  const statistics = await db.users.aggregate(pipeline).toArray();
+
+  return res.status(200).json({
+    message: 'Lấy thống kê người dùng thành công',
+    result: statistics
+  });
+};
+
+export const getUserRegistrationStatsByYearController = async (
+  req: Request<ParamsDictionary, any, any>,
+  res: Response
+) => {
+  const { year } = req.query;
+
+  // Validate year format
+  if (!year || !/^\d{4}$/.test(year as string)) {
+    throw new ErrorWithStatus({
+      message: 'Định dạng năm không hợp lệ. Sử dụng định dạng YYYY',
+      status: httpStatus.BAD_REQUEST
+    });
+  }
+
+  const yearNum = parseInt(year as string);
+  const startDate = new Date(yearNum, 0, 1); // January 1st
+  const endDate = new Date(yearNum, 11, 31, 23, 59, 59); // December 31st
+
+  const pipeline = [
+    {
+      $match: {
+        created_at: {
+          $gte: startDate,
+          $lte: endDate
+        },
+        role: {
+          $in: [RoleType.Freelancer, RoleType.Employer]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          month: { $month: '$created_at' },
+          role: '$role'
+        },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        month: '$_id.month',
+        role: {
+          $switch: {
+            branches: [
+              { case: { $eq: ['$_id.role', RoleType.Freelancer] }, then: 'Freelancer' },
+              { case: { $eq: ['$_id.role', RoleType.Employer] }, then: 'Employer' }
+            ],
+            default: 'Unknown'
+          }
+        },
+        count: 1
+      }
+    },
+    {
+      $sort: { month: 1, role: 1 }
+    }
+  ];
+
+  const statistics = await db.users.aggregate(pipeline).toArray();
+
+  // Create a complete dataset with all months and roles
+  const completeStats = Array.from({ length: 12 }, (_, i) => {
+    const month = i + 1;
+    const monthStats = statistics.filter((stat) => stat.month === month);
+    const freelancerCount = monthStats.find((stat) => stat.role === 'Freelancer')?.count || 0;
+    const employerCount = monthStats.find((stat) => stat.role === 'Employer')?.count || 0;
+
+    return {
+      month,
+      data: [
+        { role: 'Freelancer', count: freelancerCount },
+        { role: 'Employer', count: employerCount }
+      ]
+    };
+  });
+
+  return res.status(200).json({
+    message: 'Lấy thống kê người dùng đăng ký mới theo năm thành công',
+    result: completeStats
   });
 };

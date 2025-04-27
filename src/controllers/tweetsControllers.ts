@@ -240,3 +240,62 @@ export const approveReportsController = async (req: Request<ParamsDictionary, an
     message: 'Duyệt đơn báo cáo và xóa bài viết thành công'
   });
 };
+
+export const getMonthlyTweetStatisticsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { year } = req.query;
+
+  // Validate year format
+  if (!year || !/^\d{4}$/.test(year as string)) {
+    throw new ErrorWithStatus({
+      message: 'Định dạng năm không hợp lệ. Sử dụng định dạng YYYY',
+      status: httpStatus.BAD_REQUEST
+    });
+  }
+
+  const yearNum = parseInt(year as string);
+  const startDate = new Date(yearNum, 0, 1); // January 1st of the year
+  const endDate = new Date(yearNum, 11, 31, 23, 59, 59); // December 31st of the year
+
+  const pipeline = [
+    {
+      $match: {
+        created_at: {
+          $gte: startDate,
+          $lte: endDate
+        }
+      }
+    },
+    {
+      $group: {
+        _id: { $month: '$created_at' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        month: '$_id',
+        count: 1
+      }
+    },
+    {
+      $sort: { month: 1 }
+    }
+  ];
+
+  const statistics = await db.tweets.aggregate(pipeline).toArray();
+
+  // Fill in missing months with zero counts
+  const monthlyStats = Array.from({ length: 12 }, (_, i) => {
+    const existingStat = statistics.find((stat) => stat.month === i + 1);
+    return {
+      month: i + 1,
+      count: existingStat ? existingStat.count : 0
+    };
+  });
+
+  return res.status(200).json({
+    message: 'Lấy thống kê bài viết theo tháng thành công',
+    result: monthlyStats
+  });
+};

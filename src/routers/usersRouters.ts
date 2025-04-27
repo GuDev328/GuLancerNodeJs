@@ -10,6 +10,7 @@ import {
   getListAccount,
   getListRequestVerifyController,
   getMeController,
+  getOverallUserStatisticsController,
   getProfileByIDController,
   getProfileController,
   handleVerifyController,
@@ -23,7 +24,8 @@ import {
   resetPasswordController,
   unblockAccountController,
   unfollowController,
-  updateMeController
+  updateMeController,
+  getUserRegistrationStatsByYearController
 } from '~/controllers/usersControllers';
 import { filterMiddleware } from '~/middlewares/commonMiddlewares';
 import {
@@ -101,5 +103,7 @@ router.post('/handle-verify', accessTokenValidator, isAdminValidator, catchError
 
 router.get('/amount-info', accessTokenValidator, catchError(getAmountInfoController));
 router.get('/amount-history', accessTokenValidator, catchError(getAmountHistoryController));
+router.get('/registration-stats', accessTokenValidator, catchError(getUserRegistrationStatsByYearController));
+router.get('/overall-stats', accessTokenValidator, catchError(getOverallUserStatisticsController));
 
 export default router;

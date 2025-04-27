@@ -13,7 +13,8 @@ import {
   handlePendingMemberController,
   joinGroupController,
   leaveGroupController,
-  rejectGroupReportController
+  rejectGroupReportController,
+  getTopGroupsStatisticsController
 } from '~/controllers/groupsController';
 import { accessTokenValidator } from '~/middlewares/usersMiddlewares';
 import { catchError } from '~/utils/handler';
@@ -34,6 +35,7 @@ router.get('/reports', accessTokenValidator, catchError(getGroupReportsControlle
 router.post('/reject-report/:id', accessTokenValidator, catchError(rejectGroupReportController));
 router.post('/approve-report/:id', accessTokenValidator, catchError(approveGroupReportController));
 router.get('/list', accessTokenValidator, catchError(getGroupsListController));
+router.get('/stats/top-groups', accessTokenValidator, catchError(getTopGroupsStatisticsController));
 router.get('/:id', accessTokenValidator, catchError(getGroupByIdController));
 
 export default router;

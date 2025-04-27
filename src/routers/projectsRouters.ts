@@ -20,6 +20,10 @@ import {
   getMyProgressController,
   getMyProjectsController,
   getOverviewProgress,
+  getProjectStatisticsController,
+  getProjectStatisticsByMonthController,
+  getOverallTechnologyStatisticsController,
+  getOverallFieldStatisticsController,
   memberDonePhaseController,
   memberStartPhaseController,
   payForMemberController,
@@ -77,5 +81,9 @@ router.post('/pay-for-member', accessTokenValidator, isAdminProjectValidator, ca
 
 router.get('/list-apply', accessTokenValidator, catchError(getListApplyController));
 router.get('/list-invite', accessTokenValidator, catchError(getListInviteController));
+router.get('/statistics', accessTokenValidator, catchError(getProjectStatisticsController));
+router.get('/statistics-by-year', accessTokenValidator, catchError(getProjectStatisticsByMonthController));
+router.get('/statistics/technologies', accessTokenValidator, catchError(getOverallTechnologyStatisticsController));
+router.get('/statistics/fields', accessTokenValidator, catchError(getOverallFieldStatisticsController));
 
 export default router;
