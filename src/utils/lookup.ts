@@ -13,7 +13,7 @@ export const lookupUser = (localField: string, asName: string = 'user_info') => 
   {
     $lookup: {
       from: 'Evaluations',
-      let: { userId: '$user_id' },
+      let: { userId: '$' + asName + '._id' },
       pipeline: [
         {
           $match: {
@@ -34,12 +34,12 @@ export const lookupUser = (localField: string, asName: string = 'user_info') => 
   {
     $lookup: {
       from: 'Projects',
-      let: { userId: '$user_id' },
+      let: { userId: '$' + asName + '._id' },
       pipeline: [
         {
           $match: {
             $expr: {
-              $and: [{ $eq: ['$user_id', '$$userId'] }, { $eq: ['$status', StatusProject.Complete] }]
+              $and: [{ $eq: ['$admin_id', '$$userId'] }, { $eq: ['$status', StatusProject.Complete] }]
             }
           }
         },
@@ -56,7 +56,7 @@ export const lookupUser = (localField: string, asName: string = 'user_info') => 
   {
     $lookup: {
       from: 'MemberProject',
-      let: { userId: '$user_id' },
+      let: { userId: '$' + asName + '._id' },
       pipeline: [
         {
           $match: {

@@ -837,20 +837,28 @@ export const getOverallFieldStatisticsController = async (req: Request<ParamsDic
 };
 
 export const evaluateController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
-  const { user_id, project_id, reviewer_id, content, star } = req.body;
+  const { user_id, project_id, content, star } = req.body;
   const userId = new ObjectId(user_id);
   const projectId = new ObjectId(project_id);
   const reviewerId = new ObjectId(req.body.decodeAuthorization.payload.userId);
-  const created_at = DateVi();
-  const updated_at = DateVi();
+  const findEvaluate = await db.evaluations.findOne({
+    user_id: userId,
+    project_id: projectId,
+    reviewer_id: reviewerId
+  });
+  if (findEvaluate) {
+    throw new ErrorWithStatus({
+      message: 'Bạn đã đánh giá cho người dùng này tại dự án này rồi',
+      code: 'EVALUATE_ALREADY_EXISTS',
+      status: httpStatus.BAD_REQUEST
+    });
+  }
   const evaluate = new Evaluation({
     user_id: userId,
     project_id: projectId,
     reviewer_id: reviewerId,
     content,
-    star,
-    created_at,
-    updated_at
+    star
   });
   await db.evaluations.insertOne(evaluate);
   res.status(200).json({
