@@ -31,7 +31,8 @@ import {
   toProcessingController,
   toRecruitingController,
   unbookmarkController,
-  updateProjectController
+  updateProjectController,
+  evaluateController
 } from '~/controllers/projectsControllers';
 import {
   bookmarkValidator,
@@ -85,5 +86,7 @@ router.get('/statistics', accessTokenValidator, catchError(getProjectStatisticsC
 router.get('/statistics-by-year', accessTokenValidator, catchError(getProjectStatisticsByMonthController));
 router.get('/statistics/technologies', accessTokenValidator, catchError(getOverallTechnologyStatisticsController));
 router.get('/statistics/fields', accessTokenValidator, catchError(getOverallFieldStatisticsController));
+
+router.post('/evaluate', accessTokenValidator, catchError(evaluateController));
 
 export default router;

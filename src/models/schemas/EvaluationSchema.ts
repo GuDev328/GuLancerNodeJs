@@ -4,6 +4,7 @@ import { DateVi } from '~/utils/date-vi';
 interface EvaluationType {
   _id?: ObjectId;
   user_id: ObjectId;
+  project_id: ObjectId;
   reviewer_id: ObjectId;
   content: string;
   star: number;
@@ -14,6 +15,7 @@ interface EvaluationType {
 export default class Evaluation {
   _id: ObjectId;
   user_id: ObjectId;
+  project_id: ObjectId;
   reviewer_id: ObjectId;
   content: string;
   star: number;
@@ -23,6 +25,7 @@ export default class Evaluation {
   constructor(evaluate: EvaluationType) {
     this._id = evaluate._id || new ObjectId();
     this.user_id = evaluate.user_id || new ObjectId();
+    this.project_id = evaluate.project_id || new ObjectId();
     this.reviewer_id = evaluate.reviewer_id || new ObjectId();
     this.content = evaluate.content || '';
     this.star = evaluate.star || 5.0;

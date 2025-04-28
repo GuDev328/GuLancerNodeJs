@@ -17,6 +17,7 @@ import {
   GetMyProjectsRequest,
   UpdateProjectRequest
 } from '~/models/requests/ProjectRequest';
+import Evaluation from '~/models/schemas/EvaluationSchema';
 import HistoryAmount from '~/models/schemas/HistoryAmountSchema';
 import db from '~/services/databaseServices';
 import projectsService from '~/services/projectsServices';
@@ -832,5 +833,28 @@ export const getOverallFieldStatisticsController = async (req: Request<ParamsDic
   return res.status(200).json({
     message: 'Lấy thống kê lĩnh vực thành công',
     result
+  });
+};
+
+export const evaluateController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { user_id, project_id, reviewer_id, content, star } = req.body;
+  const userId = new ObjectId(user_id);
+  const projectId = new ObjectId(project_id);
+  const reviewerId = new ObjectId(req.body.decodeAuthorization.payload.userId);
+  const created_at = DateVi();
+  const updated_at = DateVi();
+  const evaluate = new Evaluation({
+    user_id: userId,
+    project_id: projectId,
+    reviewer_id: reviewerId,
+    content,
+    star,
+    created_at,
+    updated_at
+  });
+  await db.evaluations.insertOne(evaluate);
+  res.status(200).json({
+    message: 'Đánh giá thành công',
+    result: evaluate
   });
 };
