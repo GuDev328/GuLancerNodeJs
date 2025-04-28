@@ -21,7 +21,7 @@ import bcrypt from 'bcrypt';
 import User from '~/models/schemas/UserSchema';
 import db from '~/services/databaseServices';
 import { signToken, verifyToken } from '~/utils/jwt';
-import { AccountSortBy, RoleType, SendEmail, TokenType, VerifyStatus } from '~/constants/enum';
+import { AccountSortBy, RoleType, SendEmail, StatusProject, TokenType, VerifyStatus } from '~/constants/enum';
 import { ErrorWithStatus } from '~/models/Errors';
 import { RefreshToken } from '~/models/schemas/RefreshTokenSchema';
 import { ObjectId } from 'mongodb';
@@ -540,7 +540,8 @@ class UsersService {
               {
                 $group: {
                   _id: null,
-                  averageStar: { $avg: '$star' }
+                  averageStar: { $avg: '$star' },
+                  evaluationCount: { $sum: 1 }
                 }
               }
             ],
@@ -548,17 +549,87 @@ class UsersService {
           }
         },
         {
+          $lookup: {
+            from: 'Projects',
+            let: { userId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [{ $eq: ['$user_id', '$$userId'] }, { $eq: ['$status', StatusProject.Complete] }]
+                  }
+                }
+              },
+              {
+                $group: {
+                  _id: null,
+                  adminProjectsDone: { $sum: 1 }
+                }
+              }
+            ],
+            as: 'adminProjects'
+          }
+        },
+        {
+          $lookup: {
+            from: 'MemberProject',
+            let: { userId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ['$user_id', '$$userId'] }
+                }
+              },
+              {
+                $lookup: {
+                  from: 'Projects',
+                  localField: 'project_id',
+                  foreignField: '_id',
+                  as: 'project'
+                }
+              },
+              {
+                $unwind: '$project'
+              },
+              {
+                $match: {
+                  'project.status': StatusProject.Complete
+                }
+              },
+              {
+                $group: {
+                  _id: null,
+                  memberProjectsDone: { $sum: 1 }
+                }
+              }
+            ],
+            as: 'memberProjects'
+          }
+        },
+        {
           $addFields: {
             [`star`]: {
               $toDecimal: { $ifNull: [{ $arrayElemAt: ['$evaluations.averageStar', 0] }, 5.0] }
+            },
+            [`evaluationCount`]: {
+              $ifNull: [{ $arrayElemAt: ['$evaluations.evaluationCount', 0] }, 0]
+            },
+            [`projectsDone`]: {
+              $add: [
+                { $ifNull: [{ $arrayElemAt: ['$adminProjects.adminProjectsDone', 0] }, 0] },
+                { $ifNull: [{ $arrayElemAt: ['$memberProjects.memberProjectsDone', 0] }, 0] }
+              ]
             }
           }
         },
         {
           $project: {
-            evaluations: 0
+            evaluations: 0,
+            memberProjects: 0,
+            adminProjects: 0
           }
         },
+
         {
           $project: {
             password: 0,

@@ -33,6 +33,28 @@ export const lookupUser = (localField: string, asName: string = 'user_info') => 
   },
   {
     $lookup: {
+      from: 'Projects',
+      let: { userId: '$user_id' },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [{ $eq: ['$user_id', '$$userId'] }, { $eq: ['$status', StatusProject.Complete] }]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            adminProjectsDone: { $sum: 1 }
+          }
+        }
+      ],
+      as: 'adminProjects'
+    }
+  },
+  {
+    $lookup: {
       from: 'MemberProject',
       let: { userId: '$user_id' },
       pipeline: [
@@ -60,7 +82,7 @@ export const lookupUser = (localField: string, asName: string = 'user_info') => 
         {
           $group: {
             _id: null,
-            projectsDone: { $sum: 1 }
+            memberProjectsDone: { $sum: 1 }
           }
         }
       ],
@@ -76,14 +98,18 @@ export const lookupUser = (localField: string, asName: string = 'user_info') => 
         $ifNull: [{ $arrayElemAt: ['$evaluations.evaluationCount', 0] }, 0]
       },
       [`${asName}.projectsDone`]: {
-        $ifNull: [{ $arrayElemAt: ['$memberProjects.projectsDone', 0] }, 0]
+        $add: [
+          { $ifNull: [{ $arrayElemAt: ['$adminProjects.adminProjectsDone', 0] }, 0] },
+          { $ifNull: [{ $arrayElemAt: ['$memberProjects.memberProjectsDone', 0] }, 0] }
+        ]
       }
     }
   },
   {
     $project: {
       evaluations: 0,
-      memberProjects: 0
+      memberProjects: 0,
+      adminProjects: 0
     }
   }
 ];

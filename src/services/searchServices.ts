@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { MemberStatus, RoleType, TweetTypeEnum, VerifyStatus } from '~/constants/enum';
+import { MemberStatus, RoleType, StatusProject, TweetTypeEnum, VerifyStatus } from '~/constants/enum';
 import db from './databaseServices';
 import Tweet from '~/models/schemas/TweetSchema';
 import { DateVi } from '~/utils/date-vi';
@@ -200,7 +200,8 @@ class SearchServices {
             {
               $group: {
                 _id: null,
-                averageStar: { $avg: '$star' }
+                averageStar: { $avg: '$star' },
+                evaluationCount: { $sum: 1 }
               }
             }
           ],
@@ -208,15 +209,58 @@ class SearchServices {
         }
       },
       {
+        $lookup: {
+          from: 'MemberProject',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$user_id', '$$userId'] }
+              }
+            },
+            {
+              $lookup: {
+                from: 'Projects',
+                localField: 'project_id',
+                foreignField: '_id',
+                as: 'project'
+              }
+            },
+            {
+              $unwind: '$project'
+            },
+            {
+              $match: {
+                'project.status': StatusProject.Complete
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                projectsDone: { $sum: 1 }
+              }
+            }
+          ],
+          as: 'memberProjects'
+        }
+      },
+      {
         $addFields: {
           [`star`]: {
             $toDecimal: { $ifNull: [{ $arrayElemAt: ['$evaluations.averageStar', 0] }, 5.0] }
+          },
+          [`evaluationCount`]: {
+            $ifNull: [{ $arrayElemAt: ['$evaluations.evaluationCount', 0] }, 0]
+          },
+          [`projectsDone`]: {
+            $ifNull: [{ $arrayElemAt: ['$memberProjects.projectsDone', 0] }, 0]
           }
         }
       },
       {
         $project: {
-          evaluations: 0
+          evaluations: 0,
+          memberProjects: 0
         }
       },
       {
