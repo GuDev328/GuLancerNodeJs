@@ -7,6 +7,7 @@ import {
   forgotPasswordController,
   getAmountHistoryController,
   getAmountInfoController,
+  getEvaluationController,
   getListAccount,
   getListRequestVerifyController,
   getMeController,
@@ -33,6 +34,7 @@ import {
   changePasswordValidator,
   followValidator,
   forgotPasswordValidator,
+  getEvaluationValidator,
   getProfileValidator,
   isAdminValidator,
   loginValidator,
@@ -105,5 +107,7 @@ router.get('/amount-info', accessTokenValidator, catchError(getAmountInfoControl
 router.get('/amount-history', accessTokenValidator, catchError(getAmountHistoryController));
 router.get('/registration-stats', accessTokenValidator, catchError(getUserRegistrationStatsByYearController));
 router.get('/overall-stats', accessTokenValidator, catchError(getOverallUserStatisticsController));
+
+router.get('/get-evaluation/:id', accessTokenValidator, getEvaluationValidator, catchError(getEvaluationController));
 
 export default router;

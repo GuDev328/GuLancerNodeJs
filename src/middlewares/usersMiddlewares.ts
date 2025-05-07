@@ -491,3 +491,36 @@ export const getConversationsValidator = validate(
     }
   })
 );
+
+export const getEvaluationValidator = validate(
+  checkSchema({
+    page: {
+      optional: true,
+      isInt: { errorMessage: 'Page phải là một số nguyên' },
+      toInt: true,
+      custom: {
+        options: (value: number) => {
+          const num = Number(value);
+          if (num < 1) {
+            throw new Error('Page không được nhỏ hơn 1');
+          }
+          return true;
+        }
+      }
+    },
+    limit: {
+      optional: true,
+      isInt: { errorMessage: 'Limit phải là một số nguyên' },
+      toInt: true,
+      custom: {
+        options: (value: number) => {
+          const num = Number(value);
+          if (num > 50 || num < 1) {
+            throw new Error('Limit phải là một số lớn hơn 0 và nhỏ hơn 50');
+          }
+          return true;
+        }
+      }
+    }
+  })
+);

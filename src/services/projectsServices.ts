@@ -625,6 +625,17 @@ class ProjectsService {
   }
 
   async getMarket() {
+    const today = DateVi();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const projectNewToday = await db.projects
+      .find({
+        created_at: {
+          $gte: startOfDay,
+          $lt: endOfDay
+        }
+      })
+      .toArray();
     const result = await db.projects
       .aggregate([
         {
@@ -648,7 +659,6 @@ class ProjectsService {
         }
       ])
       .toArray();
-    const projectNewToday = await db.projects.find({ created_at: new Date() }).toArray();
     const projectResult = {
       total: result.length,
       today: projectNewToday.length

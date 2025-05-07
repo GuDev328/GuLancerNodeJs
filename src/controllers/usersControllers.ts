@@ -479,3 +479,72 @@ export const getUserRegistrationStatsByYearController = async (
     result: completeStats
   });
 };
+
+export const getEvaluationController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const userId = new ObjectId(req.params.id);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const [evaluations, total] = await Promise.all([
+    db.evaluations
+      .aggregate([
+        {
+          $match: { user_id: userId }
+        },
+        {
+          $lookup: {
+            from: 'Users',
+            localField: 'reviewer_id',
+            foreignField: '_id',
+            as: 'reviewer_info'
+          }
+        },
+        {
+          $unwind: '$reviewer_info'
+        },
+        {
+          $lookup: {
+            from: 'Projects',
+            localField: 'project_id',
+            foreignField: '_id',
+            as: 'project_info'
+          }
+        },
+        {
+          $unwind: '$project_info'
+        },
+        {
+          $project: {
+            'reviewer_info.password': 0,
+            'reviewer_info.forgot_password_token': 0,
+            'reviewer_info.created_at': 0,
+            'reviewer_info.updated_at': 0
+          }
+        },
+        {
+          $sort: { created_at: -1 }
+        },
+        {
+          $skip: (page - 1) * limit
+        },
+        {
+          $limit: limit
+        }
+      ])
+      .toArray(),
+    db.evaluations.countDocuments({ user_id: userId })
+  ]);
+
+  res.status(200).json({
+    message: 'Lấy danh sách đánh giá thành công',
+    result: {
+      evaluations,
+      pagination: {
+        total,
+        page,
+        limit,
+        total_pages: Math.ceil(total / limit)
+      }
+    }
+  });
+};
