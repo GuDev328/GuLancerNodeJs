@@ -155,7 +155,7 @@ class SearchServices {
         : payload.orderBy === FreelancerOrderByO.Star
           ? { star: -1 }
           : payload.orderBy === FreelancerOrderByO.ProjectDone
-            ? { project_done: -1 }
+            ? { projectsDone: -1 }
             : { created_at: -1 };
 
     const commonQuery = [
@@ -184,9 +184,7 @@ class SearchServices {
           as: 'fields_info'
         }
       },
-      {
-        $sort: sortField
-      },
+
       {
         $lookup: {
           from: 'Evaluations',
@@ -262,6 +260,9 @@ class SearchServices {
           evaluations: 0,
           memberProjects: 0
         }
+      },
+      {
+        $sort: sortField
       },
       {
         $facet: {
