@@ -98,10 +98,20 @@ class TaskService {
           }
         },
         {
-          ...lookupUser('assign_to', 'assign_to_info')
+          $lookup: {
+            from: 'Users',
+            localField: 'assign_to',
+            foreignField: '_id',
+            as: 'assign_to_info'
+          }
         },
         {
-          ...lookupUser('created_by', 'created_by_info')
+          $lookup: {
+            from: 'Users',
+            localField: 'created_by',
+            foreignField: '_id',
+            as: 'created_by_info'
+          }
         },
         {
           $lookup: {
