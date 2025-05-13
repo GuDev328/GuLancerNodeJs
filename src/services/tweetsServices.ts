@@ -34,6 +34,8 @@ class TweetsService {
         status: httpStatus.BAD_REQUEST
       });
 
+    const censor = new ObjectId(payload.decodeAuthorization.payload.userId).equals(group.admin_id[0]) || !group.censor;
+
     const tweet = new Tweet({
       group_id: new ObjectId(payload.group_id),
       user_id: new ObjectId(payload.decodeAuthorization.payload.userId),
@@ -43,10 +45,10 @@ class TweetsService {
       mentions: payload.mentions.map((tag) => new ObjectId(tag)),
       medias: payload.medias,
       views: 0,
-      censor: !group.censor
+      censor
     });
-    const createTweet = await db.tweets.insertOne(tweet);
-    return group.censor;
+    await db.tweets.insertOne(tweet);
+    return censor;
   }
 
   async increaseViews(payload: getTweetRequest) {
@@ -75,23 +77,7 @@ class TweetsService {
               as: 'group'
             }
           },
-          {
-            $addFields: {
-              mentions: {
-                $map: {
-                  input: '$mentions',
-                  as: 'mention',
-                  in: {
-                    _id: '$$mention._id',
-                    name: '$$mention.name',
-                    email: '$$mention.email',
-                    username: '$$mention.username',
-                    avatar: '$$mention.avatar'
-                  }
-                }
-              }
-            }
-          },
+
           {
             $lookup: {
               from: 'Likes',
@@ -100,19 +86,9 @@ class TweetsService {
               as: 'likes'
             }
           },
-          {
-            $lookup: {
-              from: 'Tweets',
-              localField: '_id',
-              foreignField: 'parent_id',
-              as: 'tweet_child'
-            }
-          },
+
           {
             $addFields: {
-              bookmarks: {
-                $size: '$bookmarks'
-              },
               likes: {
                 $size: '$likes'
               },
