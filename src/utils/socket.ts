@@ -78,7 +78,7 @@ const initializeSocket = (httpServer: ServerHttp) => {
         {
           $or: [
             { user_id_1: new ObjectId(fromUserId), user_id_2: new ObjectId(receiverUserId) },
-            { user_id_1: new ObjectId(fromUserId), user_id_2: new ObjectId(receiverUserId) }
+            { user_id_2: new ObjectId(fromUserId), user_id_1: new ObjectId(receiverUserId) }
           ]
         },
         {

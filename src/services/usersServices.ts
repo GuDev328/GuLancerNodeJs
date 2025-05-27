@@ -609,7 +609,7 @@ class UsersService {
         {
           $addFields: {
             [`star`]: {
-              $toDecimal: { $ifNull: [{ $arrayElemAt: ['$evaluations.averageStar', 0] }, 5.0] }
+              $toDecimal: { $ifNull: [{ $arrayElemAt: ['$evaluations.averageStar', 0] }, 0.0] }
             },
             [`evaluationCount`]: {
               $ifNull: [{ $arrayElemAt: ['$evaluations.evaluationCount', 0] }, 0]

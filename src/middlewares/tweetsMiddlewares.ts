@@ -50,7 +50,7 @@ export const createTweetValidator = validate(
       }
     },
     content: {
-      isString: { errorMessage: 'Nội dung bài đăng phải là một chuỗi' }
+      // isString: { errorMessage: 'Nội dung bài đăng phải là một chuỗi' }
       // custom: {
       //   options: async (value: string, { req }) => {
       //     const type = req.body.type as TweetTypeEnum;
