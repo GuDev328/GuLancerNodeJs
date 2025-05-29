@@ -216,13 +216,32 @@ class DisputeService {
         message: 'Bạn không có quyền xem tranh chấp này'
       });
     }
+
+    const memberProject = await db.memberProject.findOne({
+      project_id: dispute.project_id,
+      user_id: dispute.freelancer_id
+    });
+    let milestone_info: any = memberProject?.milestone_info.find((milestone) =>
+      milestone.dispute_id?.equals(dispute._id)
+    );
+    milestone_info = {
+      ...milestone_info,
+      countMilestone: milestone_info?.no + '/' + memberProject?.milestone_info.length
+    };
+
     const user = await db.users.findOne({ _id: new ObjectId(user_id) });
     if (user?.role === RoleType.Admin) {
-      return dispute;
+      return {
+        ...dispute,
+        milestone_info
+      };
     }
 
     if (decodeAuthorization.payload.role === RoleType.Admin) {
-      return dispute;
+      return {
+        ...dispute,
+        milestone_info
+      };
     }
 
     if (dispute.employer_id.equals(user_id)) {
@@ -231,6 +250,7 @@ class DisputeService {
       } else {
         return {
           ...dispute,
+          milestone_info,
           freelancer_proof: {
             ...dispute.freelancer_proof,
             files: undefined
@@ -244,6 +264,7 @@ class DisputeService {
       } else {
         return {
           ...dispute,
+          milestone_info,
           employer_proof: {
             ...dispute.employer_proof,
             files: undefined
